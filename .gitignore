@@ -1,0 +1,89 @@
+# =============================================================================
+# 1. KEIL uVISION5 (Thư mục LED_PC13_LL)
+# =============================================================================
+# Bỏ qua các thư mục chứa kết quả biên dịch (Máy người khác sẽ tự sinh lại khi bấm F7)
+LED_PC13_LL/Objects/
+LED_PC13_LL/Listings/
+
+# Bỏ qua file lưu bố cục cửa sổ theo tên máy cá nhân (VD: STM32F103C8.uvguix.ASUS)
+*.uvguix.*
+*.uvgui.*
+
+# Bỏ qua các file log sinh ra trong quá trình nạp / chạy Debug Sequences
+LED_PC13_LL/*_Sequences_*.log
+LED_PC13_LL/flash_debug.log
+LED_PC13_LL/JLinkLog.txt
+LED_PC13_LL/JLinkSettings.ini
+LED_PC13_LL/EventRecorderStub.scvd
+
+# Các đuôi file tạm/trung gian của trình biên dịch ARMCC / ARMClang
+*.bak
+*.ddk
+*.edk
+*.lst
+*.lnp
+*.mpf
+*.mpj
+*.obj
+*.omf
+*.plg
+*.rpt
+*.tmp
+*.__i
+*.crf
+*.o
+*.d
+*.axf
+*.tra
+*.dep
+*.iex
+*.htm
+*.build_log.htm
+
+# =============================================================================
+# 2. STM32CUBEIDE / ECLIPSE (Thư mục LED_PC13_LL_CUBEIDE)
+# =============================================================================
+# Bỏ qua thư mục biên dịch Debug và Release (CubeIDE sẽ tự tạo lại makefile và .elf khi Build)
+LED_PC13_LL_CUBEIDE/Debug/
+LED_PC13_LL_CUBEIDE/Release/
+
+# Bỏ qua các file phân tích ngăn xếp / độ phức tạp của GCC
+*.su
+*.cyclo
+*.list
+
+# Bỏ qua cấu hình chạy cục bộ (chứa đường dẫn tuyệt đối của máy cá nhân) & lịch sử Eclipse
+*.launch
+.metadata/
+.settings/
+
+# =============================================================================
+# 3. HỆ ĐIỀU HÀNH & TRÌNH SOẠN THẢO (OS / EDITORS)
+# =============================================================================
+.DS_Store
+Thumbs.db
+Desktop.ini
+.vscode/
+.idea/
+*~
+*.swp
+
+# =============================================================================
+# 4. NGOẠI LỆ BẮT BUỘC GIỮ LẠI ĐỂ MỌI MÁY BUILD ĐƯỢC NGAY (WHITELIST)
+# =============================================================================
+# Giữ lại báo cáo HTML ở ngoài cùng
+!Flash-STM32F103C8T6.html
+
+# Giữ lại file cấu hình Project KeilC, script .ini và cấu hình Debug
+!*.uvprojx
+!*.uvoptx
+!LED_PC13_LL/flash_init.ini
+!LED_PC13_LL/DebugConfig/*.dbgconf
+!LED_PC13_LL/RTE/**/*.dbgconf*
+
+# Giữ lại các file khung xương của STM32CubeIDE (ẩn dưới dấu chấm) và CubeMX
+!LED_PC13_LL_CUBEIDE/.project
+!LED_PC13_LL_CUBEIDE/.cproject
+!LED_PC13_LL_CUBEIDE/.mxproject
+!LED_PC13_LL_CUBEIDE/*.ioc
+!LED_PC13_LL_CUBEIDE/*.ld
