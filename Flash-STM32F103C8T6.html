@@ -1,0 +1,2183 @@
+<!DOCTYPE html>
+<html lang="vi" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Báo Cáo Kỹ Thuật Toàn Tập: Quá Khứ (.dbgconf Enable) vs Tương Lai (80 Test Cases - .dbgconf Disable)</title>
+<style>
+  :root[data-theme="dark"] {
+    --bg-main: #0b0f19;
+    --bg-card: #131b2e;
+    --bg-card-alt: #1a243d;
+    --bg-code: #090d16;
+    --text-main: #e2e8f0;
+    --text-muted: #94a3b8;
+    --text-heading: #ffffff;
+    --border-color: #263554;
+    --accent-cyan: #38bdf8;
+    --accent-purple: #a855f7;
+    --accent-pink: #f43f5e;
+    --accent-amber: #fbbf24;
+    --accent-green: #10b981;
+    --shadow-card: 0 8px 28px rgba(0, 0, 0, 0.45);
+    --table-hover: rgba(56, 189, 248, 0.08);
+  }
+
+  :root[data-theme="light"] {
+    --bg-main: #f1f5f9;
+    --bg-card: #ffffff;
+    --bg-card-alt: #f8fafc;
+    --bg-code: #0f172a;
+    --text-main: #1e293b;
+    --text-muted: #475569;
+    --text-heading: #0f172a;
+    --border-color: #cbd5e1;
+    --accent-cyan: #0284c7;
+    --accent-purple: #7e22ce;
+    --accent-pink: #e11d48;
+    --accent-amber: #d97706;
+    --accent-green: #059669;
+    --shadow-card: 0 4px 18px rgba(15, 23, 42, 0.08);
+    --table-hover: rgba(2, 132, 199, 0.06);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background-color: var(--bg-main);
+    color: var(--text-main);
+    line-height: 1.68;
+    padding-bottom: 60px;
+    transition: background-color 0.25s, color 0.25s;
+  }
+
+  /* Bù trừ khoảng cách cho mọi thẻ có ID khi cuộn tới để không bị thanh Topbar che */
+  [id] {
+    scroll-margin-top: 82px;
+  }
+
+  /* ===== TOPBAR ===== */
+  .topbar {
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    background: rgba(19, 27, 46, 0.95);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border-color);
+    padding: 10px 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  :root[data-theme="light"] .topbar {
+    background: rgba(255, 255, 255, 0.96);
+  }
+  .topbar-brand {
+    font-weight: 800;
+    font-size: 14px;
+    color: var(--accent-cyan);
+    background: none;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: inherit;
+    padding: 4px 0;
+  }
+  .topbar-brand:hover {
+    opacity: 0.85;
+  }
+  .topbar-nav {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .nav-pill {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-main);
+    background: var(--bg-card-alt);
+    border: 1px solid var(--border-color);
+    padding: 6px 13px;
+    border-radius: 20px;
+    text-decoration: none;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.2s;
+  }
+  .nav-pill:hover, .nav-pill.active-pill {
+    border-color: var(--accent-cyan);
+    color: #090d16;
+    background: var(--accent-cyan);
+    box-shadow: 0 0 12px rgba(56, 189, 248, 0.45);
+  }
+  .theme-btn {
+    cursor: pointer;
+    background: linear-gradient(135deg, var(--accent-cyan), var(--accent-purple));
+    color: #fff;
+    border: none;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 700;
+    font-family: inherit;
+  }
+
+  /* ===== 2 MASTER MODE BUTTONS (PAST VS FUTURE) ===== */
+  .master-switcher {
+    max-width: 1200px;
+    margin: 22px auto 0;
+    padding: 0 20px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+  .master-btn {
+    padding: 18px 20px;
+    border-radius: 14px;
+    border: 2px solid var(--border-color);
+    background: var(--bg-card);
+    color: var(--text-main);
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.25s ease;
+    box-shadow: var(--shadow-card);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    font-family: inherit;
+  }
+  .master-btn:hover {
+    transform: translateY(-2px);
+  }
+  .master-btn .m-tag {
+    font-size: 11.5px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 20px;
+    width: fit-content;
+  }
+  .master-btn .m-title {
+    font-size: 16.5px;
+    font-weight: 800;
+    color: var(--text-heading);
+  }
+  .master-btn .m-desc {
+    font-size: 12.5px;
+    color: var(--text-muted);
+    line-height: 1.45;
+  }
+
+  .master-btn.past-btn .m-tag {
+    background: rgba(244, 63, 94, 0.18);
+    color: #fb7185;
+    border: 1px solid rgba(244, 63, 94, 0.4);
+  }
+  .master-btn.past-btn.active {
+    border-color: #f43f5e;
+    background: linear-gradient(135deg, rgba(244, 63, 94, 0.16), var(--bg-card));
+    box-shadow: 0 0 28px rgba(244, 63, 94, 0.28);
+  }
+
+  .master-btn.future-btn .m-tag {
+    background: rgba(16, 185, 129, 0.18);
+    color: #34d399;
+    border: 1px solid rgba(16, 185, 129, 0.4);
+  }
+  .master-btn.future-btn.active {
+    border-color: #10b981;
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.16), var(--bg-card));
+    box-shadow: 0 0 28px rgba(16, 185, 129, 0.28);
+  }
+
+  /* ===== LAYOUT ===== */
+  .container {
+    max-width: 1200px;
+    margin: 20px auto;
+    padding: 0 20px;
+  }
+  .mode-view { display: none; }
+  .mode-view.active { display: block; }
+
+  .hero {
+    background: linear-gradient(135deg, rgba(56,189,248,0.14), rgba(168,85,247,0.14), rgba(244,63,94,0.1));
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    padding: 28px 28px;
+    margin-bottom: 24px;
+    box-shadow: var(--shadow-card);
+  }
+  .hero.future-hero {
+    background: linear-gradient(135deg, rgba(16,185,129,0.16), rgba(56,189,248,0.14), rgba(168,85,247,0.1));
+    border-color: rgba(16,185,129,0.45);
+  }
+  .hero h1 {
+    font-size: 24px;
+    color: var(--text-heading);
+    margin-bottom: 10px;
+    line-height: 1.35;
+  }
+  .hero .meta {
+    font-size: 13px;
+    color: var(--text-muted);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+
+  /* ===== BADGES & INTERACTIVE CITATION LINKS ===== */
+  .badge {
+    display: inline-block;
+    padding: 2px 9px;
+    border-radius: 12px;
+    font-size: 11.5px;
+    font-weight: 700;
+    text-decoration: none;
+    transition: all 0.2s ease;
+  }
+  .b-measured { background: rgba(16,185,129,0.18); color: #34d399; border: 1px solid rgba(16,185,129,0.4); }
+  .b-doc { background: rgba(56,189,248,0.18); color: #38bdf8; border: 1px solid rgba(56,189,248,0.4); }
+  .b-comm { background: rgba(251,191,36,0.18); color: #fbbf24; border: 1px solid rgba(251,191,36,0.4); }
+  .b-infer { background: rgba(168,85,247,0.18); color: #c084fc; border: 1px solid rgba(168,85,247,0.4); }
+  .b-untested { background: rgba(148,163,184,0.18); color: #cbd5e1; border: 1px solid rgba(148,163,184,0.4); }
+  .b-fail { background: rgba(244,63,94,0.18); color: #fb7185; border: 1px solid rgba(244,63,94,0.4); }
+
+  a.badge-link { cursor: pointer; position: relative; }
+  a.badge-link:hover {
+    transform: translateY(-2px) scale(1.05);
+    box-shadow: 0 0 14px rgba(56, 189, 248, 0.55);
+  }
+  a.badge-link.b-comm:hover {
+    box-shadow: 0 0 14px rgba(251, 191, 36, 0.55);
+  }
+
+  :root[data-theme="light"] .b-measured { color: #047857; }
+  :root[data-theme="light"] .b-doc { color: #0369a1; }
+  :root[data-theme="light"] .b-comm { color: #b45309; }
+  :root[data-theme="light"] .b-infer { color: #6b21a8; }
+  :root[data-theme="light"] .b-untested { color: #334155; }
+  :root[data-theme="light"] .b-fail { color: #be123c; }
+
+  /* ===== REFERENCE BOXES & BLINKING EFFECT ===== */
+  .ref-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin: 14px 0;
+  }
+  .ref-box {
+    background: var(--bg-card-alt);
+    border: 1.5px solid var(--border-color);
+    border-left: 4px solid var(--accent-cyan);
+    border-radius: 10px;
+    padding: 10px 14px;
+    font-size: 13.2px;
+    transition: all 0.3s ease;
+  }
+  .ref-box.comm-ref { border-left-color: var(--accent-amber); }
+  .ref-box a {
+    color: var(--accent-cyan);
+    word-break: break-all;
+    text-decoration: none;
+  }
+  .ref-box a:hover { text-decoration: underline; }
+
+  @keyframes refFlashGlow {
+    0%, 100% {
+      border-color: var(--border-color);
+      background: var(--bg-card-alt);
+      box-shadow: none;
+      transform: scale(1);
+    }
+    15%, 45%, 75% {
+      border-color: #38bdf8;
+      background: rgba(56, 189, 248, 0.22);
+      box-shadow: 0 0 26px rgba(56, 189, 248, 0.85), inset 0 0 14px rgba(56, 189, 248, 0.35);
+      transform: scale(1.012);
+    }
+    30%, 60%, 90% {
+      border-color: #fbbf24;
+      background: rgba(251, 191, 36, 0.08);
+      box-shadow: 0 0 8px rgba(251, 191, 36, 0.3);
+      transform: scale(1);
+    }
+  }
+  .ref-box.blink-active, .section-card.blink-active, h3.sub-title.blink-active {
+    animation: refFlashGlow 2.4s ease-in-out 1;
+  }
+
+  /* ===== CARDS & SECTIONS ===== */
+  .section-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 14px;
+    padding: 28px;
+    margin-bottom: 28px;
+    box-shadow: var(--shadow-card);
+  }
+  .part-title {
+    font-size: 20px;
+    font-weight: 800;
+    color: var(--accent-cyan);
+    border-bottom: 2px solid var(--border-color);
+    padding-bottom: 12px;
+    margin-bottom: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  h3.sub-title {
+    font-size: 17.5px;
+    color: var(--text-heading);
+    margin: 24px 0 12px;
+    padding-left: 12px;
+    border-left: 4px solid var(--accent-purple);
+    border-radius: 4px;
+  }
+  h4.mini-title {
+    font-size: 15px;
+    color: var(--accent-amber);
+    margin: 18px 0 10px;
+  }
+  p { margin-bottom: 12px; }
+  ul, ol { margin: 0 0 14px 22px; }
+  li { margin-bottom: 6px; }
+
+  code {
+    font-family: 'Cascadia Code', 'Fira Code', Consolas, monospace;
+    background: rgba(56, 189, 248, 0.13);
+    color: var(--accent-cyan);
+    padding: 2px 6px;
+    border-radius: 5px;
+    font-size: 0.9em;
+  }
+
+  pre {
+    background: var(--bg-code);
+    color: #e2e8f0;
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    padding: 16px;
+    overflow-x: auto;
+    font-family: 'Cascadia Code', 'Fira Code', Consolas, monospace;
+    font-size: 12.8px;
+    line-height: 1.55;
+    margin: 12px 0 18px;
+    position: relative;
+  }
+  pre code { background: none; color: inherit; padding: 0; }
+  .copy-btn {
+    position: absolute;
+    top: 8px;
+    right: 10px;
+    background: rgba(56, 189, 248, 0.18);
+    color: #38bdf8;
+    border: 1px solid rgba(56, 189, 248, 0.4);
+    border-radius: 6px;
+    padding: 4px 10px;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .copy-btn:hover { background: rgba(56, 189, 248, 0.32); }
+
+  /* ===== TABLES ===== */
+  .table-wrap {
+    overflow-x: auto;
+    margin: 14px 0 20px;
+    border-radius: 10px;
+    border: 1px solid var(--border-color);
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+  th {
+    background: var(--bg-card-alt);
+    color: var(--text-heading);
+    text-align: left;
+    padding: 11px 14px;
+    border-bottom: 2px solid var(--border-color);
+    font-weight: 700;
+  }
+  td {
+    padding: 9px 14px;
+    border-bottom: 1px solid var(--border-color);
+    vertical-align: top;
+  }
+  tr:hover td { background: var(--table-hover); }
+
+  /* Filter Bar for 80 Test Cases */
+  .tc-filter-bar {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 12px;
+    align-items: center;
+  }
+  .tc-filter-btn {
+    background: var(--bg-card-alt);
+    border: 1px solid var(--border-color);
+    color: var(--text-main);
+    padding: 6px 13px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .tc-filter-btn:hover, .tc-filter-btn.active {
+    background: var(--accent-cyan);
+    color: #090d16;
+    border-color: var(--accent-cyan);
+  }
+
+  /* ===== CALLOUT BOXES ===== */
+  .callout {
+    border-left: 4px solid var(--accent-cyan);
+    background: var(--bg-card-alt);
+    padding: 14px 18px;
+    border-radius: 0 10px 10px 0;
+    margin: 14px 0;
+  }
+  .callout.warn { border-left-color: var(--accent-pink); background: rgba(244, 63, 94, 0.08); }
+  .callout.ok { border-left-color: var(--accent-green); background: rgba(16, 185, 129, 0.08); }
+  .callout.special { border-left-color: var(--accent-amber); background: rgba(251, 191, 36, 0.08); }
+  .callout-title { font-weight: 700; margin-bottom: 6px; display: block; color: var(--text-heading); }
+
+  /* ===== BACK TO TOP ===== */
+  .back-toc {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 14px;
+    font-size: 12.5px;
+    font-weight: 700;
+    color: var(--accent-cyan);
+    text-decoration: none;
+    background: var(--bg-card-alt);
+    border: 1px solid var(--border-color);
+    padding: 5px 13px;
+    border-radius: 18px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .back-toc:hover {
+    background: var(--accent-cyan);
+    color: #0b0f19;
+  }
+
+  /* ===== 3-COLUMN TOC LIST ===== */
+  .toc-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+  }
+  .toc-box {
+    background: var(--bg-card-alt);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 18px;
+  }
+  .toc-box > a {
+    font-weight: 800;
+    color: var(--accent-cyan);
+    text-decoration: none;
+    font-size: 14.5px;
+    display: block;
+    margin-bottom: 12px;
+    line-height: 1.4;
+  }
+  .toc-box ul { list-style: none; margin-left: 0; }
+  .toc-box li { margin-bottom: 8px; line-height: 1.45; }
+  .toc-box ul a {
+    color: var(--text-main);
+    text-decoration: none;
+    font-size: 13px;
+    transition: color 0.15s;
+  }
+  .toc-box ul a:hover { color: var(--accent-cyan); text-decoration: underline; }
+
+  /* =====================================================================
+     INTERACTIVE KEILC FLASH FLOW DIAGRAM (BEFORE & AFTER .DBGCONF)
+     ===================================================================== */
+  .ufd-wrapper {
+    background: radial-gradient(ellipse at top, #182238 0%, #0d1322 65%, #080c16 100%);
+    color: #e6edf7;
+    border: 2px solid #38bdf8;
+    border-radius: 16px;
+    padding: 24px;
+    margin: 20px 0;
+    box-shadow: 0 0 35px rgba(56, 189, 248, 0.18);
+  }
+  .ufd-wrapper.future-ufd {
+    border-color: #10b981;
+    box-shadow: 0 0 35px rgba(16, 185, 129, 0.18);
+  }
+  .ufd-header {
+    text-align: center;
+    margin-bottom: 18px;
+  }
+  .ufd-header h4 {
+    font-size: 19px;
+    font-weight: 800;
+    background: linear-gradient(90deg, #38bdf8, #c084fc, #fb7185);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .ufd-header p {
+    font-size: 13px;
+    color: #94a3b8;
+    margin-top: 4px;
+  }
+  .ufd-toolbar {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 14px;
+  }
+  .ufd-btn {
+    background: rgba(56, 189, 248, 0.12);
+    border: 1px solid rgba(56, 189, 248, 0.45);
+    color: #38bdf8;
+    padding: 7px 14px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .ufd-btn:hover {
+    background: rgba(56, 189, 248, 0.25);
+    transform: translateY(-1px);
+  }
+  .ufd-btn.active {
+    background: #38bdf8;
+    color: #090d16;
+    box-shadow: 0 0 18px rgba(56, 189, 248, 0.6);
+  }
+  .ufd-btn.mode-fail {
+    background: rgba(244, 63, 94, 0.16);
+    border-color: #f43f5e;
+    color: #fda4af;
+  }
+  .ufd-btn.mode-pass {
+    background: rgba(16, 185, 129, 0.18);
+    border-color: #10b981;
+    color: #6ee7b7;
+  }
+
+  .ufd-phases {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+  }
+  .ufd-phase-btn {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.14);
+    color: #94a3b8;
+    padding: 6px 13px;
+    border-radius: 20px;
+    font-size: 11.8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .ufd-phase-btn.active {
+    color: #ffffff;
+    background: linear-gradient(135deg, rgba(56,189,248,0.35), rgba(168,85,247,0.35));
+    border-color: #c084fc;
+    box-shadow: 0 0 14px rgba(168,85,247,0.45);
+  }
+
+  .ufd-status-bar {
+    background: rgba(15, 23, 42, 0.85);
+    border: 1px solid rgba(56, 189, 248, 0.4);
+    border-radius: 12px;
+    padding: 14px 18px;
+    margin-bottom: 18px;
+    min-height: 76px;
+    transition: all 0.3s;
+  }
+  .ufd-status-bar.danger {
+    background: rgba(76, 5, 25, 0.75);
+    border-color: #f43f5e;
+    box-shadow: 0 0 24px rgba(244, 63, 94, 0.35);
+  }
+  .ufd-status-bar.ok {
+    background: rgba(6, 78, 59, 0.75);
+    border-color: #10b981;
+    box-shadow: 0 0 24px rgba(16, 185, 129, 0.35);
+  }
+  .ufd-status-title {
+    font-size: 14.5px;
+    font-weight: 800;
+    color: #38bdf8;
+    margin-bottom: 4px;
+  }
+  .ufd-status-bar.danger .ufd-status-title { color: #fda4af; }
+  .ufd-status-bar.ok .ufd-status-title { color: #6ee7b7; }
+  .ufd-status-desc { font-size: 13px; color: #e2e8f0; }
+
+  .ufd-col-headers {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 14px;
+    margin-bottom: 12px;
+  }
+  .ufd-col-h {
+    text-align: center;
+    padding: 12px;
+    border-radius: 10px;
+    font-weight: 700;
+    font-size: 13.5px;
+  }
+  .ufd-col-h.pc { background: rgba(56,189,248,0.15); border: 1px solid rgba(56,189,248,0.45); color: #7dd3fc; }
+  .ufd-col-h.st { background: rgba(251,191,36,0.15); border: 1px solid rgba(251,191,36,0.45); color: #fde047; }
+  .ufd-col-h.mc { background: rgba(244,63,94,0.15); border: 1px solid rgba(244,63,94,0.45); color: #fda4af; }
+
+  .ufd-rows { display: flex; flex-direction: column; gap: 10px; }
+  .ufd-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 14px;
+    padding: 10px;
+    border-radius: 12px;
+    background: rgba(255,255,255,0.02);
+    border: 1px solid rgba(255,255,255,0.06);
+    opacity: 0.35;
+    transition: all 0.3s ease;
+    cursor: pointer;
+  }
+  .ufd-row.passed { opacity: 0.85; border-color: rgba(56, 189, 248, 0.28); }
+  .ufd-row.active {
+    opacity: 1;
+    background: rgba(56, 189, 248, 0.11);
+    border-color: #38bdf8;
+    box-shadow: 0 0 22px rgba(56, 189, 248, 0.3);
+    transform: scale(1.01);
+  }
+  .ufd-row.active.warn-row {
+    background: rgba(244, 63, 94, 0.16);
+    border-color: #f43f5e;
+    box-shadow: 0 0 28px rgba(244, 63, 94, 0.45);
+  }
+  .ufd-row.active.ok-row {
+    background: rgba(16, 185, 129, 0.16);
+    border-color: #10b981;
+    box-shadow: 0 0 28px rgba(16, 185, 129, 0.45);
+  }
+
+  .ufd-cell {
+    background: rgba(15, 23, 42, 0.75);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: 12.5px;
+  }
+  .ufd-cell.pc-cell { border-left: 3px solid #38bdf8; }
+  .ufd-cell.st-cell { border-left: 3px solid #fbbf24; }
+  .ufd-cell.mc-cell { border-left: 3px solid #f43f5e; }
+  .ufd-cell.ram-cell {
+    border: 1px dashed #c084fc;
+    border-left: 3px solid #c084fc;
+    background: rgba(88, 28, 135, 0.28);
+  }
+  .ufd-step-tag {
+    display: inline-block;
+    font-size: 10.5px;
+    font-weight: 800;
+    padding: 1px 7px;
+    border-radius: 10px;
+    margin-bottom: 4px;
+    background: rgba(56,189,248,0.2);
+    color: #7dd3fc;
+  }
+  .ufd-arrow-tag {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 700;
+    color: #fbbf24;
+    margin-left: 6px;
+  }
+
+  @media (max-width: 920px) {
+    .master-switcher, .toc-grid, .ufd-col-headers, .ufd-row { grid-template-columns: 1fr; }
+    .ufd-col-headers { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ==================== STICKY TOPBAR (FIXED WORKING BUTTONS) ==================== -->
+<header class="topbar" id="top-bar">
+  <button type="button" class="topbar-brand" onclick="scrollToPageTop()">
+    ⚡ BÁO CÁO KỸ THUẬT STM32F103 (KEILC &amp; CUBEIDE)
+  </button>
+  <div class="topbar-nav" id="topbarNavLinks">
+    <button type="button" class="nav-pill" onclick="jumpToSection('muc-luc', this)">📑 Mục lục</button>
+    <button type="button" class="nav-pill" onclick="jumpToSection('phan-1', this)">Phần 1: Điều tra KeilC</button>
+    <button type="button" class="nav-pill" onclick="jumpToSection('so-do-uv4', this)">⚡ Sơ đồ UV4 Interactive</button>
+    <button type="button" class="nav-pill" onclick="jumpToSection('phan-2', this)">Phần 2: STM32CubeIDE</button>
+    <button type="button" class="nav-pill" onclick="jumpToSection('phan-3', this)">Phần 3: Custom .FLM</button>
+    <button type="button" class="nav-pill" onclick="jumpToSection('phan-4', this)">Phần 4: Code main.c</button>
+  </div>
+  <button type="button" class="theme-btn" id="themeToggle" onclick="toggleTheme()">☀️ Giao diện Sáng</button>
+</header>
+
+<!-- ==================== 2 MASTER MODE BUTTONS (PAST VS FUTURE) ==================== -->
+<div class="master-switcher">
+  <button type="button" class="master-btn past-btn active" id="btnModePast" onclick="switchMasterMode('past')">
+    <span class="m-tag">🔴 NÚT 1 (TAB A — QUÁ KHỨ)</span>
+    <div class="m-title">Quy Trình Chẩn Đoán Cũ (Khi Còn Bật <code>.dbgconf</code> / Sai Option Flash)</div>
+    <div class="m-desc">Lưu trữ toàn bộ quá trình điều tra ban đầu khi <code>Pack: Debug Description = Enable</code> (<code>.dbgconf</code>) chèn ép quyền Reset của KeilC, gây lỗi <code>Contents mismatch</code> ở 72 MHz và cách chữa cháy bằng <code>flash_init.ini</code>.</div>
+  </button>
+
+  <button type="button" class="master-btn future-btn" id="btnModeFuture" onclick="switchMasterMode('future')">
+    <span class="m-tag">🟢 NÚT 2 (TAB B — TƯƠNG LAI / CHUẨN HÓA)</span>
+    <div class="m-title">Quy Trình Chẩn Đoán Đúng (Bỏ <code>.dbgconf</code>, Chuẩn <code>2 WS</code> &amp; 80 Test Cases)</div>
+    <div class="m-desc">Giải phẫu tận gốc sau khi vô hiệu hóa <code>.dbgconf</code>, chuẩn hóa <code>2 Wait States</code> (phân tích dung sai <code>1 WS</code> giữa Chip Thật vs Clone), biểu đồ 3 bên (PC – ST-Link – STM32) và phân tích toàn diện Ma trận 80 Test Cases (<code>TC_01</code> ➔ <code>TC_80</code>).</div>
+  </button>
+</div>
+
+<!-- =========================================================================
+     ======================== VIEW A: QUÁ KHỨ (PAST) =========================
+     ========================================================================= -->
+<div class="container mode-view active" id="view-past">
+
+  <section class="hero">
+    <h1>[HỒ SƠ QUÁ KHỨ] HÓA GIẢI LỖI <code>Contents mismatch</code> KHI CÒN BẬT <code>.dbgconf</code> &amp; CHUYỂN ĐỔI STM32CUBEIDE</h1>
+    <div class="meta">
+      <span>📅 <b>Giai đoạn 1:</b> Khi chưa phát hiện sự chèn ép của <code>.dbgconf</code></span>
+      <span>🎯 <b>Vi điều khiển:</b> STM32F103C8T6 (72 MHz HSE PLL)</span>
+      <span>⚠️ <b>Hiện tượng:</b> <code>Pack: Debug Description = Enable</code> làm liệt Reset của ST-Link, phải dùng <code>flash_init.ini</code></span>
+    </div>
+  </section>
+
+  <!-- MỤC LỤC TƯƠNG TÁC TAB A -->
+  <section class="section-card" id="past-muc-luc">
+    <div class="part-title">
+      <span>📑 MỤC LỤC TƯƠNG TÁC (TABLE OF CONTENTS — QUY TRÌNH QUÁ KHỨ)</span>
+    </div>
+    <div class="toc-grid">
+      <div class="toc-box">
+        <a href="#past-phan-1">PHẦN 1: ĐIỀU TRA, KIỂM THỬ CHÉO VÀ GIẢI PHẪU LỖI <code>Contents mismatch</code> TRÊN KEILC</a>
+        <ul>
+          <li><a href="#past-1-1">1.1. Môi trường thử nghiệm, Cấu trúc Project (không RTE) &amp; Sai lầm nhận định ban đầu</a></li>
+          <li><a href="#past-1-2">1.2. Loại trừ giả thuyết &amp; Kiểm thử chéo Phần cứng (Chip &amp; ST-Link Thật/Clone)</a></li>
+          <li><a href="#past-1-3">1.3. Cô lập nhánh nạp, Giải phẫu Log trượt 8-byte Flash &amp; Dịch ngược <code>.FLM</code></a></li>
+          <li><a href="#past-1-4">1.4. Sơ đồ luồng nạp <code>UV4.exe</code> (Khi còn <code>.dbgconf</code>) &amp; Giải mã <code>Connect</code> / <code>Reset</code></a></li>
+          <li><a href="#past-1-5">1.5. Quy trình Kiểm chứng chuẩn và Ma trận Thí nghiệm cũ (<code>B0</code> ➔ <code>E8</code>)</a></li>
+          <li><a href="#past-1-6">1.6. Chữa cháy bằng <code>flash_init.ini</code> &amp; Phân tích Thanh ghi (<code>72 MHz</code> vs <code>8 MHz</code>)</a></li>
+          <li><a href="#past-1-7">1.7. Tổng hợp Dẫn chứng từ Datasheet, Reference Manual, Blog và Cộng đồng</a></li>
+        </ul>
+      </div>
+      <div class="toc-box">
+        <a href="#past-phan-2">PHẦN 2: THỰC NGHIỆM TRÊN STM32CUBEIDE &amp; EXTERNAL TOOLS CLI</a>
+        <ul>
+          <li><a href="#past-2-1">2.1. Tại sao STM32CubeIDE không bị lỗi <code>Contents mismatch</code>?</a></li>
+          <li><a href="#past-2-2">2.2. Khởi tạo Project <code>LED_PC13_LL_CUBEIDE</code> &amp; Cấu hình Clock 72 MHz</a></li>
+          <li><a href="#past-2-3">2.3. Sự cố khóa cổng SWD (<code>LL_GPIO_AF_DisableRemap_SWJ</code>) &amp; Hiện tượng <code>BOOT0 = 1</code></a></li>
+          <li><a href="#past-2-4">2.4. Tách biệt 2 chế độ nạp bằng <code>STM32_Programmer_CLI.exe</code> &amp; Fix lỗi <code>${project_loc}</code></a></li>
+        </ul>
+      </div>
+      <div class="toc-box">
+        <a href="#past-phan-3">PHẦN 3: TÙY BIẾN THUẬT TOÁN NẠP (<code>.FLM</code> / <code>.STLDR</code>) PRO DEV</a>
+        <ul>
+          <li><a href="#past-3-1">3.1. Các kho GitHub mã nguồn mở &amp; Hướng dẫn Keil AN333 / ST MOOCs</a></li>
+        </ul>
+        <a href="#past-phan-4" style="margin-top:14px;">PHẦN 4: MÃ NGUỒN HOÀN CHỈNH (<code>main.c</code>)</a>
+        <ul>
+          <li><a href="#past-4-1">4.1. File <code>Core/Src/main.c</code> chuẩn trên STM32CubeIDE</a></li>
+          <li><a href="#past-4-2">4.2. File <code>main.c</code> trong giai đoạn chẩn đoán cũ trên KeilC</a></li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- PHẦN 1 (TAB A) -->
+  <section class="section-card" id="past-phan-1">
+    <div class="part-title">
+      <span>PHẦN 1: ĐIỀU TRA, KIỂM THỬ CHÉO VÀ GIẢI PHẪU LỖI <code>Contents mismatch</code> TRÊN KEILC (KHI CÒN <code>.dbgconf</code>)</span>
+      <a href="#past-muc-luc" class="back-toc">🔼 Quay về Mục lục</a>
+    </div>
+
+    <h3 class="sub-title" id="past-1-1">1.1. Môi trường thử nghiệm, Cấu trúc Project (không dùng RTE) &amp; Những ngộ nhận ban đầu</h3>
+    <p>Trong giai đoạn đầu, dự án <code>LED_PC13_LL</code> trên Keil µVision5 được tạo bằng cách thêm thủ công các tệp thư viện LL vào cây thư mục. Khi nhìn vào cây thư mục dưới đây, có một "kẻ giấu mặt" đã âm thầm chi phối toàn bộ hành vi nạp mà ban đầu chúng ta chưa nhận ra — đó chính là tệp <b><code>Target_1_STM32F103C8_1.0.0.dbgconf</code></b> và 83 tệp log <b><code>STM32F103C8_Sequences_0000..0082.log</code></b>:</p>
+<pre><code>C:\Users\ASUS\Desktop\LED_PC13_LL
+|   EventRecorderStub.scvd, flash_debug.log, flash_init.ini, main.c
+|   STM32F103C8.uvprojx, STM32F103C8.uvoptx
+|   STM32F103C8_Sequences_0000.log - STM32F103C8_Sequences_0082.log  &lt;-- Dấu vết của Pack Debug Description!
++---DebugConfig/    Target_1_STM32F103C8_1.0.0.dbgconf                &lt;-- Kẻ chèn ép Connect &amp; Reset!
++---Drivers/        core_cm3.h, stm32f103xb.h, stm32f1xx.h, stm32f1xx_ll_*.h
++---Objects/        STM32F103C8.axf, STM32F103C8.hex
++---RTE/Device/     STM32F101_102_103_105_107.dbgconf</code></pre>
+
+    <div class="callout warn">
+      <span class="callout-title">🔍 Nhìn lại chuỗi chẩn đoán sai / thiếu sót trong quá khứ:</span>
+      <ul>
+        <li><b>Ngộ nhận 1 (Nghi ngờ do không dùng RTE):</b> Ban đầu ta nghi ngờ việc add file thủ công thay vì dùng RTE gây lỗi. Thực tế RTE chỉ quản lý mã nguồn lúc biên dịch, không liên quan đến quá trình nạp.</li>
+        <li><b>Ngộ nhận 2 (Đổ lỗi hoàn toàn cho ST-Link V2 không biết Reset):</b> Vì để mặc định <code>Pack: Debug Description = Enable</code> (tệp <code>.dbgconf</code> hoạt động), các tùy chọn <code>Connect</code> và <code>Reset</code> trong hộp thoại KeilC bị kịch bản của Pack ghi đè/vô hiệu hóa, làm chúng ta tưởng rằng bản thân KeilC không thể tự Reset chip về 8 MHz nếu không viết script <code>flash_init.ini</code>!</li>
+        <li><b>Ngộ nhận 3 (Nhầm lẫn giữa <code>Delay(90000)</code> và treo Wait State):</b> Trong code cũ ghi comment <code>4500000</code> nhưng truyền vào <code>90000</code> khiến LED chớp siêu nhanh trông như sáng mờ, gây nhiễu việc phân biệt giữa "chip đang chạy 72 MHz" và "chip bị treo do sai Wait State (0 WS / 1 WS)".</li>
+      </ul>
+    </div>
+    <a href="#past-muc-luc" class="back-toc">🔼 Quay về Mục lục</a>
+
+    <!-- 1.2 (TAB A) -->
+    <h3 class="sub-title" id="past-1-2">1.2. Loại trừ giả thuyết và Kiểm thử chéo Phần cứng (Chip &amp; ST-Link Thật/Clone)</h3>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>#</th><th>Thí nghiệm thực hiện (Khi <code>.dbgconf</code> đang bật)</th><th>Kết quả thu được</th><th>Ý nghĩa kỹ thuật</th><th>Nhãn</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><b>1</b></td><td>Comment <code>SystemClock_Config()</code> (chip chạy HSI 8 MHz), không <code>.ini</code></td><td>Hết hoàn toàn lỗi mismatch</td><td>Xung nhịp <code>72 MHz</code> là điều kiện kích hoạt lỗi.</td><td><span class="badge b-measured">[Đã đo]</span></td></tr>
+          <tr><td><b>2</b></td><td>Bật lại 72 MHz. Nhấn <code>F8 #1</code> ➔ Nhấn RESET vật lý ➔ Nhấn <code>F8 #2</code></td><td><code>F8 #1</code> Verify OK, <code>F8 #2</code> nổ <code>Contents mismatch</code></td><td>Lỗi tái hiện ổn định 100% khi chip đang chạy ở 72 MHz.</td><td><span class="badge b-measured">[Đã đo]</span></td></tr>
+          <tr><td><b>3</b></td><td>Lặp lại với Board thứ 2 và ST-Link V2 thứ 2</td><td>Kết quả lỗi y hệt</td><td>Lỗi hệ thống, không phải hỏng lẻ tẻ 1 linh kiện.</td><td><span class="badge b-measured">[Đã đo]</span></td></tr>
+          <tr><td><b>4</b></td><td>Thử trên Board thứ 3 có mã chuẩn ST <code>0xE0042000 = 0x20036410</code></td><td>Vẫn bị <code>Contents mismatch</code> ở <code>F8 #2</code></td><td>Khi <code>.dbgconf</code> bật và nạp ở 0 WS, cả chip thật lẫn clone đều lỗi Verify.</td><td><span class="badge b-measured">[Đã đo]</span></td></tr>
+          <tr><td><b>5</b></td><td>Phân tích mẫu địa chỉ sai trong log <code>F8 #2</code></td><td>Tại địa chỉ chia hết cho 8, byte <code>Flash=</code> bằng byte <code>Required=</code> ở <code>địa chỉ − 8</code></td><td>Word đầu mỗi cặp 64-bit trả về dữ liệu cặp trước do đọc thiếu Wait State.</td><td><span class="badge b-measured">[Đã đo]</span></td></tr>
+          <tr><td><b>6</b></td><td>Dịch ngược hàm <code>Init</code> của <code>STM32F10x_128.FLM</code></td><td>Ghi cứng <code>FLASH-&gt;ACR = 0</code>; <code>UnInit</code> không khôi phục</td><td>Thủ phạm trực tiếp ép Flash về 0 Wait State lúc nạp.</td><td><span class="badge b-measured">[Đã đo]</span></td></tr>
+          <tr><td><b>7</b></td><td>Đối chiếu mã nguồn mẫu <code>FlashPrg.c</code> của Keil</td><td>Hàm <code>Init</code> đặt <code>ACR = 0</code> kèm chú thích <i>"Zero Wait State"</i></td><td>Xác nhận thiết kế mặc định của thuật toán Keil.</td><td><a href="#past-ref-13" class="badge b-comm badge-link" onclick="flashRef(event, ['past-ref-13'])">[Cộng đồng]</a></td></tr>
+          <tr><td><b>8</b></td><td>Nối chân <code>NRST</code>, chọn <code>under Reset</code> + <code>HW RESET</code> (khi chưa tắt <code>.dbgconf</code>)</td><td>Vẫn bị mismatch ở <code>F8 #2</code></td><td>Kịch bản <code>.dbgconf</code> và lỗi xung <code>HW RESET</code> làm cấu hình này thất bại.</td><td><span class="badge b-measured">[Đã đo]</span></td></tr>
+          <tr><td><b>9</b></td><td>Dùng <code>flash_init.ini</code> chuẩn ép RCC về HSI 8 MHz trước khi nạp</td><td>Nhấn <code>F8</code> chạy ổn định liên tiếp</td><td>Cách vượt rào thành công khi chưa phát hiện ra nút tắt <code>.dbgconf</code>.</td><td><span class="badge b-measured">[Đã đo]</span></td></tr>
+          <tr><td><b>10</b></td><td>Chạy thử phiên bản <code>.ini</code> lỗi cú pháp/địa chỉ (Bản 2)</td><td>Keil <code>UV4.exe</code> sập văng khỏi màn hình (Mã <code>0xC000041D</code>)</td><td>Lỗi thực thi callback script của Keil.</td><td><span class="badge b-measured">[Đã đo]</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <a href="#past-muc-luc" class="back-toc">🔼 Quay về Mục lục</a>
+
+    <!-- 1.3 (TAB A) -->
+    <h3 class="sub-title" id="past-1-3">1.3. Cô lập nhánh nạp, Giải phẫu Log trượt 8-byte Flash và Dịch ngược thuật toán <code>.FLM</code></h3>
+    <p>Log lỗi thu được khi nhấn <code>F8</code> lần 2 (lúc chip đang chạy 72 MHz và <code>.dbgconf</code> đang bật):</p>
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy Log</button><code>Load "C:\\Users\\ASUS\\Desktop\\LED_PC13_LL\\Objects\\STM32F103C8.axf" 
+Full Chip Erase Done.
+Programming Done.
+Contents mismatch at: 08000000H  (Flash=28H  Required=60H) !
+Contents mismatch at: 08000001H  (Flash=01H  Required=06H) !
+Contents mismatch at: 08000003H  (Flash=08H  Required=20H) !
+Contents mismatch at: 08000008H  (Flash=60H  Required=75H) !
+Contents mismatch at: 08000009H  (Flash=06H  Required=01H) !
+Contents mismatch at: 0800000BH  (Flash=20H  Required=08H) !
+Contents mismatch at: 08000010H  (Flash=75H  Required=79H) !
+Contents mismatch at: 08000018H  (Flash=79H  Required=7DH) !
+...
+Contents mismatch at: 08000100H  (Flash=00H  Required=01H) !
+Contents mismatch at: 08000101H  (Flash=0CH  Required=07H) !
+Contents mismatch at: 08000102H  (Flash=82H  Required=DAH) !
+Contents mismatch at: 08000103H  (Flash=44H  Required=45H) !
+Contents mismatch at: 08000108H  (Flash=01H  Required=21H) !
+Contents mismatch at: 08000109H  (Flash=07H  Required=F8H) !
+Contents mismatch at: 0800010AH  (Flash=DAH  Required=AFH) !
+Contents mismatch at: 0800010BH  (Flash=45H  Required=F2H) !
+Too many errors to display !
+Error: Flash Download failed  -  "Cortex-M3"</code></pre>
+
+    <div class="callout warn">
+      <span class="callout-title">🔍 Quy luật trượt 8-byte (64-bit Read Latch) do <code>FLASH_ACR = 0</code> ở 72 MHz:</span>
+      <ul>
+        <li>Quá trình <code>Full Chip Erase</code> và <code>Programming</code> thực chất đã ghi dữ liệu vào Flash <b>đúng 100%</b>.</li>
+        <li>Khi hàm <code>Init()</code> trong <code>STM32F10x_128.FLM</code> thực thi lệnh máy <code>STR R0, [R4, #0x00]</code> (ghi <code>FLASH-&gt;ACR = 0x00000000</code> — 0 Wait State) trong khi xung nhịp <code>HCLK</code> vẫn đang ở <code>72 MHz</code> (<code>13.88 ns</code>/chu kỳ &lt; <code>35 ns</code> thời gian chốt Flash), mỗi lần đọc vào biên địa chỉ chia hết cho 8 (byte <code>0..3</code> và <code>8..B</code>), bộ đệm 64-bit chưa kịp nạp dữ liệu mới nên trả về dữ liệu cũ của <b><code>Địa chỉ − 8</code></b> (ví dụ: tại <code>0x08000008H</code> trả về <code>60H 06H 20H</code> của <code>0x08000000H</code>; tại <code>0x08000108H</code> trả về <code>01H 07H DAH 45H</code> của <code>0x08000100H</code>). Đến Word thứ hai của cụm 64-bit (byte <code>4..7</code> và <code>C..F</code>), thời gian đã qua &gt;40 ns nên đọc đúng 100%.</li>
+      </ul>
+    </div>
+    <a href="#past-muc-luc" class="back-toc">🔼 Quay về Mục lục</a>
+
+    <!-- 1.4 (TAB A - BIỂU ĐỒ TRƯỚC KHI BỎ .DBGCONF) -->
+    <h3 class="sub-title" id="past-1-4">1.4. Sơ đồ luồng nạp <code>UV4.exe</code> (TRƯỚC KHI BỎ CHỌN <code>.dbgconf</code>) &amp; Giải mã <code>Connect</code> / <code>Reset</code></h3>
+    <h4 class="mini-title" id="past-so-do-uv4">B. Biểu đồ Tương tác Quy trình Nạp TRƯỚC KHI BỎ <code>.dbgconf</code> (Pack: Debug Description = Enable)</h4>
+    <p>Biểu đồ dưới đây thể hiện chính xác tình trạng <b>trước khi bỏ chọn <code>.dbgconf</code></b>: Kịch bản <code>.dbgconf</code> ở Bước 2 chặn đứng các thiết lập Reset thông thường của KeilC, đẩy chip vẫn đang chạy <code>72 MHz</code> vào thẳng hàm <code>FLM_Init()</code> (<code>ACR = 0</code>), khiến cách duy nhất để cứu vãn ở giai đoạn này là phải chèn file <code>flash_init.ini</code> vào Bước 3:</p>
+
+    <div class="ufd-wrapper">
+      <div class="ufd-header">
+        <h4>🔴 SƠ ĐỒ LUỒNG NẠP KEILC TRƯỚC KHI TẮT .DBGCONF (PACK DESCRIPTION = ENABLE)</h4>
+        <p>Tệp <code>.dbgconf</code> vô hiệu hóa Reset ở Bước 2 ➔ Bắt buộc phải dùng <code>flash_init.ini</code> ở Bước 3 nếu không muốn nổ Mismatch ở Bước 9</p>
+      </div>
+
+      <div class="ufd-toolbar">
+        <button type="button" class="ufd-btn" id="pastPlayBtn" onclick="pastTogglePlay()">▶ Chạy tự động</button>
+        <button type="button" class="ufd-btn" onclick="pastPrev()">◀ Bước trước</button>
+        <button type="button" class="ufd-btn" onclick="pastNext()">Bước tiếp ▶</button>
+        <button type="button" class="ufd-btn" onclick="pastReset()">⟲ Xem toàn bộ / Reset</button>
+        <button type="button" class="ufd-btn mode-fail" id="pastModeBtn" onclick="pastToggleMode()">💥 Đang chọn: Không có flash_init.ini (.dbgconf giữ nguyên 72 MHz ➔ Lỗi!)</button>
+      </div>
+
+      <div class="ufd-status-bar" id="pastStatusBar">
+        <div class="ufd-status-title" id="pastStatusTitle">👋 Chế độ Xem Tổng Quan (Quy trình cũ khi .dbgconf đang bật)</div>
+        <div class="ufd-status-desc" id="pastStatusDesc">Nhấn <b>▶ Chạy tự động</b> hoặc click vào từng hàng bên dưới để xem cách <code>.dbgconf</code> chèn ép các tùy chọn <code>Connect/Reset</code> ở Bước 2.</div>
+      </div>
+
+      <div class="ufd-col-headers">
+        <div class="ufd-col-h pc">💻 CỘT 1: MÁY TÍNH (HOST)<br/><span style="font-size:11.5px;font-weight:400;">UV4.exe + .dbgconf (Enable)</span></div>
+        <div class="ufd-col-h st">🔌 CỘT 2: MẠCH NẠP (PROBE)<br/><span style="font-size:11.5px;font-weight:400;">ST-Link V2 (Bị .dbgconf chi phối)</span></div>
+        <div class="ufd-col-h mc">🧠 CỘT 3: CHIP STM32F103C8T6<br/><span style="font-size:11.5px;font-weight:400;">Đang chạy 72 MHz (ACR = 0x32)</span></div>
+      </div>
+
+      <div class="ufd-rows" id="pastRowsContainer">
+        <div class="ufd-row passed" onclick="pastSelectStep(0)">
+          <div class="ufd-cell pc-cell"><span class="ufd-step-tag">BƯỚC 1</span><div>Nhấn <code>F8</code>: <code>UV4.exe</code> nạp <code>ST-LINKIII-KEIL_SWO.dll</code> nhưng bị ép đọc kịch bản từ <code>Target_1_STM32F103C8.dbgconf</code>.</div></div>
+          <div class="ufd-cell st-cell"><span class="ufd-step-tag">NHẬN KỊCH BẢN PACK</span><div>Ghi log ra <code>STM32F103C8_Sequences_xxxx.log</code>, bỏ qua quy trình Reset gốc của Driver.</div></div>
+          <div class="ufd-cell mc-cell"><span class="ufd-step-tag">TRẠNG THÁI TRƯỚC NẠP</span><div>Đang chạy <code>SYSCLK = 72 MHz</code> (<code>RCC_CFGR = 0x001D040A</code>, <code>FLASH_ACR = 0x32</code>).</div></div>
+        </div>
+
+        <div class="ufd-row passed" onclick="pastSelectStep(1)">
+          <div class="ufd-cell pc-cell"><span class="ufd-step-tag">BƯỚC 2 (BỊ CHÈN ÉP)</span><div><b><code>.dbgconf</code> chèn ép <code>Connect / Reset</code>:</b> Kịch bản Pack chỉ phát lệnh dừng CPU mà khóa/bỏ qua lệnh Reset ngoại vi!</div></div>
+          <div class="ufd-cell st-cell"><span class="ufd-step-tag">CHỈ HALT LÕI CPU</span><div>Ghi <code>DHCSR = 0xA05F0003</code> dừng CPU. Xung <code>NRST</code> / <code>SYSRESETREQ</code> không được phát ra!</div></div>
+          <div class="ufd-cell mc-cell"><span class="ufd-step-tag" style="background:rgba(244,63,94,0.25);color:#fda4af;">⚠️ RCC VẪN KẸT 72 MHz</span><div>Lõi Cortex-M3 dừng lại nhưng ngoại vi <code>RCC</code> không được Reset, giữ nguyên <b>72 MHz</b>!</div></div>
+        </div>
+
+        <div class="ufd-row passed" onclick="pastSelectStep(2)">
+          <div class="ufd-cell pc-cell"><span class="ufd-step-tag">BƯỚC 3 (PHAO CỨU SINH DUY NHẤT)</span><div><b>Chạy <code>flash_init.ini</code> (Utilities):</b> Vì Bước 2 đã bị <code>.dbgconf</code> làm hỏng, đây là chốt chặn duy nhất ở giai đoạn cũ để hạ xung!</div></div>
+          <div class="ufd-cell st-cell"><span class="ufd-step-tag">TRUYỀN LỆNH .INI</span><div>Nếu có <code>.ini</code> chuẩn: Ghi <code>_WDWORD</code> xuống <code>0x40021000</code> &amp; <code>0x40021004</code>.</div></div>
+          <div class="ufd-cell mc-cell" id="pastRow3Mc"><span class="ufd-step-tag">TRẠNG THÁI XUNG NHỊP</span><div>⚠️ Không có <code>.ini</code> ➔ Chip <b>VẪN KẸT Ở 72 MHz</b> khi bước sang bơm <code>.FLM</code>!</div></div>
+        </div>
+
+        <div class="ufd-row passed" onclick="pastSelectStep(3)">
+          <div class="ufd-cell pc-cell"><span class="ufd-step-tag">BƯỚC 4 &amp; 5 (BƠM .FLM)</span><div><code>UV4.exe</code> đọc tệp <code>STM32F10x_128.FLM</code> trên ổ cứng và đẩy mã máy vào <code>SRAM (0x20000000)</code>.</div></div>
+          <div class="ufd-cell st-cell"><span class="ufd-step-tag">USB 0xF2 0x36</span><div>Ghi khối thuật toán <code>.FLM</code> và cấp phát Buffer trong SRAM.</div></div>
+          <div class="ufd-cell ram-cell"><span class="ufd-step-tag">📦 SRAM (0x20000000)</span><div>Chứa hàm <code>Init()</code>, <code>EraseSector()</code>, <code>ProgramPage()</code> của <code>.FLM</code>.</div></div>
+        </div>
+
+        <div class="ufd-row passed" onclick="pastSelectStep(4)">
+          <div class="ufd-cell pc-cell"><span class="ufd-step-tag">BƯỚC 6 (FLM_Init)</span><div>Ép thanh ghi <code>PC</code> của CPU nhảy vào chạy hàm <code>Init()</code> của <code>.FLM</code> trong SRAM.</div></div>
+          <div class="ufd-cell st-cell"><span class="ufd-step-tag">CHẠY MÃ MÁY &quot;DL `&quot;</span><div>Thực thi lệnh <code>STR R0, [R4, #0x00]</code> tại địa chỉ <code>0x40022000</code>.</div></div>
+          <div class="ufd-cell mc-cell" style="border-color:#f43f5e;"><span class="ufd-step-tag" style="background:rgba(244,63,94,0.25);color:#fda4af;">🚨 ÉP FLASH_ACR = 0</span><div><b>Ghi cứng <code>FLASH-&gt;ACR = 0x00000000</code> (0 Wait State, tắt Prefetch)!</b></div></div>
+        </div>
+
+        <div class="ufd-row passed" onclick="pastSelectStep(5)">
+          <div class="ufd-cell pc-cell"><span class="ufd-step-tag">BƯỚC 7 &amp; 8 (ERASE &amp; PROGRAM)</span><div>Xóa sạch Flash (<code>Full Chip Erase Done.</code>) và ghi từng Half-Word từ SRAM xuống <code>0x08000000</code> (<code>Programming Done.</code>).</div></div>
+          <div class="ufd-cell st-cell"><span class="ufd-step-tag">ĐỢI CỜ FLASH_SR.BSY</span><div>Quá trình ghi chờ cờ <code>BSY</code> (~50 µs) nên không bị ảnh hưởng bởi Wait State đọc.</div></div>
+          <div class="ufd-cell ram-cell"><span class="ufd-step-tag">📥 GHI ĐÚNG 100%</span><div>Dữ liệu trong Flash <code>0x08000000</code> đã được ghi chuẩn xác 100%.</div></div>
+        </div>
+
+        <div class="ufd-row passed" onclick="pastSelectStep(6)">
+          <div class="ufd-cell pc-cell"><span class="ufd-step-tag">BƯỚC 9 &amp; 10 (VERIFY &amp; KẾT CỤC)</span><div>Đọc lại vùng nhớ <code>0x08000000H</code> qua Bus AHB để đối chiếu với tệp <code>.axf</code> gốc.</div></div>
+          <div class="ufd-cell st-cell"><span class="ufd-step-tag">USB 0xF2 0x35 (READMEM)</span><div>Đọc liên tiếp các cụm 64-bit qua FLITF với <code>FLASH_ACR = 0</code>.</div></div>
+          <div class="ufd-cell mc-cell" id="pastRow7Mc"><span class="ufd-step-tag" style="background:rgba(244,63,94,0.25);color:#fda4af;">💥 NỔ CONTENTS MISMATCH!</span><div>Ở <b>72 MHz + 0 WS</b>: Word đầu mỗi cụm 8-byte trả về dữ liệu của <code>Addr - 8</code>!</div></div>
+        </div>
+      </div>
+    </div>
+
+    <h4 class="mini-title">C. Giải mã thực chất các tùy chọn <code>Connect</code>, <code>Reset</code> và các công tắc liên quan trong KeilC</h4>
+    <p><i>(💡 Bấm trực tiếp vào nhãn <b>[Tài liệu]</b> hoặc <b>[Cộng đồng]</b> để cuộn xuống và làm nhấp nháy khung dẫn chứng ở mục 1.7)</i>:</p>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Nhóm tùy chọn</th><th>Tên thiết lập</th><th>Cơ chế hoạt động thực tế</th><th>Có Reset ngoại vi (RCC, <code>FLASH_ACR</code>) không?</th><th>Tác động khi <code>.dbgconf</code> đang BẬT</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><b>Connect</b></td><td><code>Normal</code></td><td>Kết nối SWD bình thường, không kéo chân Reset phần cứng.</td><td><b>Không</b></td><td>❌ Giữ nguyên 72 MHz, gây lỗi mismatch.</td></tr>
+          <tr><td><b>Connect</b></td><td><code>with Pre-reset</code></td><td>Kéo chân <code>NRST</code> phần cứng <b>trước</b> khi kết nối SWD <a href="#past-ref-1" class="badge b-doc badge-link" onclick="flashRef(event, ['past-ref-1', 'past-ref-2'])">[Tài liệu]</a>.</td><td>Có (nếu không bị Pack chặn)</td><td>⚠️ Bị kịch bản <code>.dbgconf</code> can thiệp khi Pack đang Enable.</td></tr>
+          <tr><td><b>Connect</b></td><td><code>under Reset</code></td><td>Giữ chân <code>NRST</code> ở mức thấp <b>trong suốt lúc</b> bắt tay SWD <a href="#past-ref-1" class="badge b-doc badge-link" onclick="flashRef(event, ['past-ref-1', 'past-ref-2', 'past-ref-3'])">[Tài liệu]</a>.</td><td>Có (nếu không bị Pack chặn)</td><td>⚠️ Khi đi kèm <code>HW RESET</code> lúc <code>.dbgconf</code> bật vẫn bị mismatch (Mã TN <code>E5</code>).</td></tr>
+          <tr><td><b>Reset</b></td><td><code>Autodetect</code></td><td>Keil tự chọn kiểu reset dựa theo mô tả trong gói CMSIS-Pack <a href="#past-ref-1" class="badge b-doc badge-link" onclick="flashRef(event, ['past-ref-1', 'past-ref-4'])">[Tài liệu]</a>.</td><td>Phụ thuộc vào <code>.dbgconf</code></td><td>❌ Khi <code>.dbgconf</code> bật, nó không reset RCC về 8 MHz ở đầu phiên nạp.</td></tr>
+          <tr><td><b>Reset</b></td><td><code>HW RESET</code></td><td>Kéo chân <code>NRST</code> vật lý <a href="#past-ref-1" class="badge b-doc badge-link" onclick="flashRef(event, ['past-ref-1', 'past-ref-2', 'past-ref-3'])">[Tài liệu]</a>.</td><td><b>Có</b> (nếu ST-Link phát xung thật)</td><td>❌ Driver ST-Link V2 của Keil không phát xung HW RESET đơn lẻ chuẩn xác.</td></tr>
+          <tr><td><b>Reset</b></td><td><code>SYSRESETREQ</code></td><td>Ghi bit <code>SYSRESETREQ</code> trong thanh ghi <code>AIRCR</code> của Cortex-M3 <a href="#past-ref-2" class="badge b-doc badge-link" onclick="flashRef(event, ['past-ref-2', 'past-ref-3'])">[Tài liệu]</a>.</td><td><b>CÓ (Reset cả Core lẫn RCC/Flash)</b></td><td>✅ Reset mềm qua SWD mạnh nhất khi giải phóng khỏi <code>.dbgconf</code>.</td></tr>
+          <tr><td><b>Reset</b></td><td><code>VECTRESET</code></td><td>Ghi bit <code>VECTRESET</code> chỉ làm mới lõi CPU Cortex-M3 <a href="#past-ref-2" class="badge b-doc badge-link" onclick="flashRef(event, ['past-ref-2', 'past-ref-3'])">[Tài liệu]</a>.</td><td><b>KHÔNG (Giữ nguyên RCC 72 MHz)</b></td><td>❌ Luôn gây lỗi nếu ở bước Connect trước đó chưa kéo chip về 8 MHz.</td></tr>
+          <tr><td><b>Tab Pack</b></td><td><code>Debug Description: Enable</code></td><td>Sử dụng kịch bản debug viết sẵn trong file <code>.dbgconf</code> / DFP <a href="#past-ref-4" class="badge b-doc badge-link" onclick="flashRef(event, ['past-ref-4'])">[Tài liệu]</a>.</td><td>Chèn ép các tùy chọn Connect/Reset</td><td>🚨 <b>Thủ phạm giấu mặt!</b> Tắt (Disable) ô này mới giải phóng được <code>Connect/Reset</code> <a href="#past-ref-5" class="badge b-comm badge-link" onclick="flashRef(event, ['past-ref-5', 'past-ref-6', 'past-ref-7'])">[Cộng đồng]</a>.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <a href="#past-muc-luc" class="back-toc">🔼 Quay về Mục lục</a>
+
+    <!-- 1.5 (TAB A) -->
+    <h3 class="sub-title" id="past-1-5">1.5. Quy trình Kiểm chứng chuẩn và Ma trận Thí nghiệm Ban đầu (<code>B0</code> ➔ <code>E8</code>)</h3>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Mã TN</th><th>Pack: Debug Description</th><th>Connect</th><th>Reset</th><th>Reset after Connect</th><th>Giả thuyết kiểm chứng ban đầu</th><th>Kết quả F8 #2</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><b>B0</b></td><td>Enable (Mặc định)</td><td>Normal</td><td>Autodetect</td><td>Tắt</td><td>Baseline đối chứng gây lỗi khi còn <code>.dbgconf</code></td><td>❌ <code>mismatch</code> <span class="badge b-measured">[Đã đo]</span></td></tr>
+          <tr><td><b>E1..E4, E6</b></td><td>Enable / Disable</td><td>Các tổ hợp</td><td>SYSRESETREQ</td><td>Bật / Tắt</td><td>Đề xuất ban đầu (Sau này được thay bằng Ma trận 80 Test Cases toàn diện ở Tab B)</td><td><span class="badge b-untested">[Xem Tab B (80 TC)]</span></td></tr>
+          <tr><td><b>E5</b></td><td><b>Chưa rõ</b> (Mặc định: Enable)</td><td><b>under Reset</b></td><td><b>HW RESET</b></td><td><b>Bật</b></td><td>Thử nghiệm phần cứng khi chưa tắt <code>.dbgconf</code> (Thí nghiệm #8)</td><td>❌ <code>mismatch</code> <span class="badge b-measured">[Đã đo]</span></td></tr>
+          <tr><td><b>E7</b></td><td>Enable</td><td>Tùy ý</td><td>Tùy ý</td><td>Tùy ý</td><td>Gắn script <code>flash_init.ini</code> vào ô <i>Utilities ➔ Init File</i></td><td>✅ <b>PASS 100%</b> <span class="badge b-measured">[Đã đo]</span></td></tr>
+          <tr><td><b>E8</b></td><td>—</td><td>—</td><td>—</td><td>—</td><td>Dùng <code>ST-LINK_CLI -c SWD -P "#H" -V -rst</code> làm External Tool</td><td>✅ <b>PASS 100%</b> <span class="badge b-measured">[Đã đo]</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <a href="#past-muc-luc" class="back-toc">🔼 Quay về Mục lục</a>
+
+    <!-- 1.6 (TAB A) -->
+    <h3 class="sub-title" id="past-1-6">1.6. Khắc phục bằng <code>flash_init.ini</code> và Phân tích Log Thanh ghi (<code>72 MHz</code> vs <code>8 MHz</code>)</h3>
+    <p>Khi chưa tắt <code>.dbgconf</code>, gắn tệp <code>flash_init.ini</code> vào <b>Options for Target ➔ Utilities ➔ Init File</b> giúp cưỡng bức hạ xung từ 72 MHz về HSI 8 MHz ở Bước 3 trước khi <code>.FLM</code> chạy:</p>
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy .ini</button><code>FUNC void ResetClocks (void) {
+    unsigned int v;
+    v = _RDWORD(0x40021000);
+    _WDWORD(0x40021000, (v | 0x00000001)); // Bật HSION (8 MHz)
+    _WDWORD(0x40021004, 0x00000000);       // Chuyển SYSCLK về HSI
+    v = _RDWORD(0x40021000);
+    _WDWORD(0x40021000, (v & 0xFEF6FFFF)); // Tắt PLLON và HSEON
+    _WDWORD(0x40021004, 0x00000000);       // Xóa sạch cấu hình PLL
+    _WDWORD(0x40022000, 0x00000030);       // Khôi phục FLASH_ACR = 0x30
+}
+ResetClocks();</code></pre>
+    <a href="#past-muc-luc" class="back-toc">🔼 Quay về Mục lục</a>
+
+    <!-- 1.7 (TAB A) -->
+    <h3 class="sub-title" id="past-1-7">1.7. Tổng hợp Dẫn chứng từ Datasheet, Reference Manual, Blog và Cộng đồng</h3>
+    <div class="ref-list">
+      <div class="ref-box" id="past-ref-1"><b>[1] <span class="badge b-doc">[Tài liệu]</span> Keil — ULINKpro Connect &amp; Reset Options:</b> <a href="https://www.keil.com/support/man/docs/ulinkpro/ulinkpro_ctx_debug.asp" target="_blank">https://www.keil.com/support/man/docs/ulinkpro/ulinkpro_ctx_debug.asp</a></div>
+      <div class="ref-box" id="past-ref-2"><b>[2] <span class="badge b-doc">[Tài liệu]</span> Keil — J-Link Debug (Connect, Reset):</b> <a href="https://www.keil.com/support/man/docs/jlink/jlink_conf_debug.asp" target="_blank">https://www.keil.com/support/man/docs/jlink/jlink_conf_debug.asp</a></div>
+      <div class="ref-box" id="past-ref-3"><b>[3] <span class="badge b-doc">[Tài liệu]</span> IAR — ST-LINK Setup (Reset types):</b> <a href="https://docs.iar.com/ewarm/9.7/en/c-spy-debugging/debugger-options/reference-information-on-c-spy-hardware-debugger-driver-options/st-link---setup.html" target="_blank">https://docs.iar.com/ewarm/9.7/en/c-spy-debugging/debugger-options/reference-information-on-c-spy-hardware-debugger-driver-options/st-link---setup.html</a></div>
+      <div class="ref-box" id="past-ref-4"><b>[4] <span class="badge b-doc">[Tài liệu]</span> CMSIS-Pack — Use of debug descriptions in µVision:</b> <a href="https://arm-software.github.io/CMSIS_5/5.7.0/Pack/html/dbg_sqns_uvision.html" target="_blank">https://arm-software.github.io/CMSIS_5/5.7.0/Pack/html/dbg_sqns_uvision.html</a></div>
+      <div class="ref-box comm-ref" id="past-ref-5"><b>[5] <span class="badge b-comm">[Cộng đồng]</span> Arm Community — MDK 5.28 problem with Reset and Run:</b> <a href="https://community.arm.com/support-forums/f/keil-forum/44063/mdk-arm-5-28-problem-with-reset-and-run" target="_blank">https://community.arm.com/support-forums/f/keil-forum/44063/mdk-arm-5-28-problem-with-reset-and-run</a></div>
+      <div class="ref-box comm-ref" id="past-ref-6"><b>[6] <span class="badge b-comm">[Cộng đồng]</span> EEVblog — ST-Link V2 không reset target sau khi nạp:</b> <a href="https://eevblog.com/forum/microcontrollers/cant-get-stm-link-v2-debuggerprogrammer-to-reset-the-target-after-programming" target="_blank">https://eevblog.com/forum/microcontrollers/cant-get-stm-link-v2-debuggerprogrammer-to-reset-the-target-after-programming</a></div>
+      <div class="ref-box comm-ref" id="past-ref-7"><b>[7] <span class="badge b-comm">[Cộng đồng]</span> Arm Community — PDSC Sequence Execution failed:</b> <a href="https://community.arm.com/support-forums/f/keil-forum/47144/pdsc-sequence-execution-failed-error/167512" target="_blank">https://community.arm.com/support-forums/f/keil-forum/47144/pdsc-sequence-execution-failed-error/167512</a></div>
+      <div class="ref-box" id="past-ref-8"><b>[8] <span class="badge b-doc">[Tài liệu]</span> STMicroelectronics — Errata sheet STM32F101/102/103x8/B (DocID14574 Rev 13):</b> <a href="https://git.ondrovo.com/gex/gex-platform-info/raw/branch/master/F103_BLUEPILL/stm32f103%20errata.pdf" target="_blank">https://git.ondrovo.com/gex/gex-platform-info/raw/branch/master/F103_BLUEPILL/stm32f103%20errata.pdf</a></div>
+      <div class="ref-box comm-ref" id="past-ref-9"><b>[9] <span class="badge b-comm">[Cộng đồng]</span> ST Community — SYSCLK trên STM32F101 (0 WS ở 72 MHz crash):</b> <a href="https://community.st.com/s/question/0D50X00009XkbE7/sysclk-on-stm32f101" target="_blank">https://community.st.com/s/question/0D50X00009XkbE7/sysclk-on-stm32f101</a></div>
+      <div class="ref-box comm-ref" id="past-ref-10"><b>[10] <span class="badge b-comm">[Cộng đồng]</span> ST Community — ST-Link + IAR debugger:</b> <a href="https://community.st.com/t5/stm32-mcus-products/st-link-iar-debugger/td-p/567522" target="_blank">https://community.st.com/t5/stm32-mcus-products/st-link-iar-debugger/td-p/567522</a></div>
+      <div class="ref-box comm-ref" id="past-ref-13"><b>[13] <span class="badge b-comm">[Cộng đồng]</span> CSDN Blog — Trích dẫn <code>FlashPrg.c</code> của Keil (<code>Init</code> đặt <code>ACR = 0</code>):</b> <a href="https://blog.csdn.net/sinat_31039061/article/details/128350295" target="_blank">https://blog.csdn.net/sinat_31039061/article/details/128350295</a></div>
+    </div>
+    <a href="#past-muc-luc" class="back-toc">🔼 Quay về Mục lục</a>
+  </section>
+
+  <!-- PHẦN 2 (TAB A) -->
+  <section class="section-card" id="past-phan-2">
+    <div class="part-title">
+      <span>PHẦN 2: THỰC NGHIỆM TRÊN STM32CUBEIDE &amp; EXTERNAL TOOLS CLI</span>
+      <a href="#past-muc-luc" class="back-toc">🔼 Quay về Mục lục</a>
+    </div>
+    <h3 class="sub-title" id="past-2-1">2.1. Tại sao STM32CubeIDE không bị lỗi <code>Contents mismatch</code>?</h3>
+    <p>STM32CubeIDE không sử dụng tệp <code>.FLM</code> hay <code>.dbgconf</code> của Keil mà dùng <b>ST-LINK GDB Server</b> gọi <code>STM32_Programmer_CLI.exe</code> thực hiện <i>Reset &amp; Halt</i> phần cứng chuẩn xác trước khi ghi và Verify Flash.</p>
+    <h3 class="sub-title" id="past-2-2">2.2. Khởi tạo Project <code>LED_PC13_LL_CUBEIDE</code> &amp; Cấu hình Clock 72 MHz</h3>
+    <p>Cấu hình <code>RCC ➔ HSE = Crystal/Ceramic Resonator</code>, <code>SYS ➔ Debug = Serial Wire</code>, nhập <code>HCLK = 72 MHz</code> (<code>PLLMul = X9</code>, <code>APB1 = /2</code>) và đổi Driver <code>RCC/GPIO</code> sang <b>LL</b> trong <i>Project Manager ➔ Advanced Settings</i>.</p>
+    <h3 class="sub-title" id="past-2-3">2.3. Sự cố khóa cổng SWD (<code>LL_GPIO_AF_DisableRemap_SWJ</code>) &amp; Hiện tượng <code>BOOT0 = 1</code></h3>
+    <p>Thay <code>LL_GPIO_AF_DisableRemap_SWJ()</code> bằng <code>LL_GPIO_AF_Remap_SWJ_NOJTAG()</code> để giữ cổng SWD luôn mở. Khi gạt <code>BOOT0 = 1</code> để cứu chip và nhấn <b>Run</b>, GDB Server ghi thẳng địa chỉ <code>Reset_Handler</code> vào thanh ghi <code>PC (R15)</code> giúp chip chạy ngay lập tức.</p>
+    <h3 class="sub-title" id="past-2-4">2.4. Tách biệt 2 chế độ nạp bằng <code>STM32_Programmer_CLI.exe</code> &amp; Fix lỗi <code>${project_loc}</code></h3>
+    <p>Sử dụng đường dẫn tuyệt đối trong <i>External Tools Configurations</i> để nạp xong giữ chip đứng im chờ nhấn nút RESET vật lý:</p>
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy Args</button><code>-c port=SWD -d "C:\Users\ASUS\Desktop\LED_PC13_LL_CUBEIDE\Debug\LED_PC13_LL_CUBEIDE.elf" -v</code></pre>
+    <a href="#past-muc-luc" class="back-toc">🔼 Quay về Mục lục</a>
+  </section>
+
+  <!-- PHẦN 3 (TAB A) -->
+  <section class="section-card" id="past-phan-3">
+    <div class="part-title">
+      <span>PHẦN 3: TÙY BIẾN THUẬT TOÁN NẠP (<code>.FLM</code> / <code>.STLDR</code>) TỪ PRO DEV &amp; CHÍNH HÃNG</span>
+      <a href="#past-muc-luc" class="back-toc">🔼 Quay về Mục lục</a>
+    </div>
+    <h3 class="sub-title" id="past-3-1">3.1. Các kho GitHub mã nguồn mở &amp; Hướng dẫn Keil AN333 / ST MOOCs</h3>
+    <ul>
+      <li><b>Clive Turvey (<code>cturvey/stm32extldr</code>):</b> <a href="https://github.com/cturvey/stm32extldr" target="_blank">https://github.com/cturvey/stm32extldr</a></li>
+      <li><b>ST MOOCs Official Repo (<code>vlcekji2/External-Loaders</code>):</b> <a href="https://github.com/vlcekji2/External-Loaders" target="_blank">https://github.com/vlcekji2/External-Loaders</a></li>
+      <li><b>Keil Application Note AN333:</b> Sửa hàm <code>Init()</code> trong <code>FlashPrg.c</code> của mẫu <code>_Template_Flash</code> để không ép <code>FLASH-&gt;ACR = 0</code> khi xung đang ở 72 MHz.</li>
+    </ul>
+    <a href="#past-muc-luc" class="back-toc">🔼 Quay về Mục lục</a>
+  </section>
+
+  <!-- PHẦN 4 (TAB A) -->
+  <section class="section-card" id="past-phan-4">
+    <div class="part-title">
+      <span>PHẦN 4: MÃ NGUỒN HOÀN CHỈNH (<code>main.c</code> TRONG GIAI ĐOẠN CHẨN ĐOÁN CŨ)</span>
+      <a href="#past-muc-luc" class="back-toc">🔼 Quay về Mục lục</a>
+    </div>
+    <h3 class="sub-title" id="past-4-1">4.1. File <code>Core/Src/main.c</code> chuẩn trên STM32CubeIDE</h3>
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy Code CubeIDE</button><code>#include "main.h"
+
+void SystemClock_Config(void);
+static void MX_GPIO_Init(void);
+
+int main(void)
+{
+  LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_AFIO);
+  LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_PWR);
+  NVIC_SetPriorityGrouping(NVIC_PRIORITYGROUP_4);
+  NVIC_SetPriority(SysTick_IRQn, NVIC_EncodePriority(NVIC_GetPriorityGrouping(),15, 0));
+
+  /* Giữ cổng nạp SWD luôn mở */
+  LL_GPIO_AF_Remap_SWJ_NOJTAG();
+
+  SystemClock_Config();
+  MX_GPIO_Init();
+
+  while (1)
+  {
+    LL_GPIO_TogglePin(GPIOC, LL_GPIO_PIN_13);
+    for (volatile int i = 0; i &lt; 900000; i++);
+  }
+}</code></pre>
+
+    <h3 class="sub-title" id="past-4-2">4.2. File <code>main.c</code> gốc trên KeilC (Khi chưa chuẩn hóa Wait State &amp; Delay)</h3>
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy Code KeilC Cũ</button><code>#include "stm32f1xx.h"
+#include "stm32f1xx_ll_bus.h"
+#include "stm32f1xx_ll_gpio.h"
+#include "stm32f1xx_ll_rcc.h"
+#include "stm32f1xx_ll_system.h"
+
+void SystemClock_Config(void)
+{
+    LL_RCC_HSE_Enable();
+    while(LL_RCC_HSE_IsReady() != 1);
+
+    LL_RCC_PLL_ConfigDomain_SYS(LL_RCC_PLLSOURCE_HSE_DIV_1, LL_RCC_PLL_MUL_9);
+    LL_RCC_PLL_Enable();
+    while(LL_RCC_PLL_IsReady() != 1);
+
+    LL_FLASH_SetLatency(LL_FLASH_LATENCY_2);
+    LL_RCC_SetAHBPrescaler(LL_RCC_SYSCLK_DIV_1);
+    LL_RCC_SetAPB1Prescaler(LL_RCC_APB1_DIV_2);
+    LL_RCC_SetAPB2Prescaler(LL_RCC_APB2_DIV_1);
+
+    LL_RCC_SetSysClkSource(LL_RCC_SYS_CLKSOURCE_PLL);
+    while(LL_RCC_GetSysClkSource() != LL_RCC_SYS_CLKSOURCE_STATUS_PLL);
+}</code></pre>
+    <a href="#past-muc-luc" class="back-toc">🔼 Quay về Mục lục</a>
+  </section>
+
+</div>
+
+<!-- =========================================================================
+     =================== VIEW B: TƯƠNG LAI / CHUẨN HÓA (80 TC) ===============
+     ========================================================================= -->
+<div class="container mode-view" id="view-future">
+
+  <section class="hero future-hero">
+    <h1>[HỒ SƠ CHUẨN HÓA] GIẢI PHẪU TOÀN DIỆN SAU KHI TẮT <code>.dbgconf</code>, CHUẨN HÓA <code>2 WAIT STATES</code> &amp; MA TRẬN 80 TEST CASES</h1>
+    <div class="meta">
+      <span>🚀 <b>Bước ngoặt điều tra:</b> Vô hiệu hóa <code>Target_1_STM32F103C8_1.0.0.dbgconf</code> (Tắt Pack Debug Description)</span>
+      <span>🎯 <b>Cấu hình chuẩn:</b> <code>LL_FLASH_LATENCY_2</code> (2 WS @ 72 MHz)</span>
+      <span>📊 <b>Thực nghiệm:</b> 80/80 Test Cases (<code>TC_01</code> ➔ <code>TC_80</code>) trên kiến trúc 3 bên (PC Host – ST-Link – STM32)</span>
+    </div>
+  </section>
+
+  <!-- MỤC LỤC TƯƠNG TÁC TAB B -->
+  <section class="section-card" id="fut-muc-luc">
+    <div class="part-title">
+      <span>📑 MỤC LỤC TƯƠNG TÁC (TABLE OF CONTENTS — QUY TRÌNH CHUẨN HÓA MỚI)</span>
+    </div>
+    <div class="toc-grid">
+      <div class="toc-box">
+        <a href="#fut-phan-1">PHẦN 1: ĐIỀU TRA, KIỂM THỬ CHÉO VÀ GIẢI PHẪU LỖI <code>Contents mismatch</code> TRÊN KEILC</a>
+        <ul>
+          <li><a href="#fut-1-1">1.1. Bước ngoặt khi tắt <code>.dbgconf</code> &amp; Sự khác biệt Wait State (<code>0 WS</code> / <code>1 WS</code> / <code>2 WS</code>) giữa Chip Thật và Clone</a></li>
+          <li><a href="#fut-1-2">1.2. Kiến trúc 3 Bên (PC Host – ST-Link – STM32) &amp; Vị trí thực sự của tệp <code>.FLM</code></a></li>
+          <li><a href="#fut-1-3">1.3. Bản chất tính năng Verify của KeilC: Phần cứng trượt 8-byte hay Phần mềm thông báo?</a></li>
+          <li><a href="#fut-1-4">1.4. Biểu đồ luồng nạp <code>UV4.exe</code> (SAU KHI BỎ <code>.dbgconf</code>) &amp; Giải phẫu 5 Nhóm Kết nối</a></li>
+          <li><a href="#fut-1-5">1.5. Bảng Ma trận 80 Test Cases (<code>TC_01</code> ➔ <code>TC_80</code>) &amp; Phân tích Kỹ thuật Chuẩn Engineer</a></li>
+          <li><a href="#fut-1-6">1.6. Tổng kết 3 Quy tắc Vàng cấu hình KeilC (Không cần <code>flash_init.ini</code>)</a></li>
+          <li><a href="#fut-1-7">1.7. Tổng hợp Dẫn chứng từ Datasheet, Reference Manual, Blog và Cộng đồng</a></li>
+        </ul>
+      </div>
+      <div class="toc-box">
+        <a href="#fut-phan-2">PHẦN 2: THỰC NGHIỆM TRÊN STM32CUBEIDE &amp; EXTERNAL TOOLS CLI</a>
+        <ul>
+          <li><a href="#fut-2-1">2.1. Đối chiếu kiến trúc GDB Server của STM32CubeIDE với KeilC (Khi đã tắt <code>.dbgconf</code>)</a></li>
+          <li><a href="#fut-2-2">2.2. Khởi tạo Project <code>LED_PC13_LL_CUBEIDE</code> &amp; Cấu hình Clock 72 MHz (2 Wait States)</a></li>
+          <li><a href="#fut-2-3">2.3. Phòng chống khóa cổng SWD (<code>LL_GPIO_AF_Remap_SWJ_NOJTAG</code>) &amp; Cơ chế <code>BOOT0 = 1</code></a></li>
+          <li><a href="#fut-2-4">2.4. Tách biệt 2 chế độ nạp bằng <code>STM32_Programmer_CLI.exe</code> &amp; Fix lỗi <code>${project_loc}</code></a></li>
+        </ul>
+      </div>
+      <div class="toc-box">
+        <a href="#fut-phan-3">PHẦN 3: TÙY BIẾN THUẬT TOÁN NẠP (<code>.FLM</code> / <code>.STLDR</code>) PRO DEV</a>
+        <ul>
+          <li><a href="#fut-3-1">3.1. Các kho GitHub mã nguồn mở &amp; Cách tự build <code>.FLM</code> giữ nguyên <code>2 Wait States</code></a></li>
+        </ul>
+        <a href="#fut-phan-4" style="margin-top:14px;">PHẦN 4: MÃ NGUỒN HOÀN CHỈNH (<code>main.c</code>)</a>
+        <ul>
+          <li><a href="#fut-4-1">4.1. File <code>Core/Src/main.c</code> chuẩn trên STM32CubeIDE (Chuẩn <code>2 WS</code>)</a></li>
+          <li><a href="#fut-4-2">4.2. File <code>main.c</code> chuẩn hóa cuối cùng trên KeilC (Chuẩn <code>2 WS</code> + Timeout <code>WAIT_MAX</code>)</a></li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- PHẦN 1 (TAB B - CHUẨN HÓA MỚI & 80 TEST CASES) -->
+  <section class="section-card" id="fut-phan-1">
+    <div class="part-title">
+      <span>PHẦN 1: GIẢI PHẪU LỖI TRÊN KEILC SAU KHI TẮT <code>.dbgconf</code> &amp; MA TRẬN 80 TEST CASES</span>
+      <a href="#fut-muc-luc" class="back-toc">🔼 Quay về Mục lục</a>
+    </div>
+
+    <!-- 1.1 -->
+    <h3 class="sub-title" id="fut-1-1">1.1. Bước ngoặt khi tắt <code>.dbgconf</code> &amp; Sự khác biệt Wait State (<code>0 WS</code> / <code>1 WS</code> / <code>2 WS</code>) giữa Chip Thật và Clone</h3>
+    <p>Khi vô hiệu hóa tệp <code>DebugConfig\Target_1_STM32F103C8_1.0.0.dbgconf</code> (tức bỏ chọn <code>Pack: Debug Description</code> trong KeilC) và bỏ hoàn toàn tệp <code>flash_init.ini</code>, toàn bộ bức tranh kỹ thuật đã lộ diện rõ ràng:</p>
+
+    <div class="callout ok">
+      <span class="callout-title">🎯 Phát hiện cốt lõi 1: Tệp <code>.dbgconf</code> chính là kẻ đã chèn ép các tùy chọn <code>Connect</code> và <code>Reset</code>!</span>
+      Khi còn bật <code>.dbgconf</code>, kịch bản của CMSIS-Pack chiếm quyền điều khiển của <code>ST-LINKIII-KEIL_SWO.dll</code>, khiến việc chọn <code>Autodetect</code> hay <code>under Reset</code> đều không đưa được thanh ghi <code>RCC_CFGR</code> về <code>8 MHz</code>. Ngay khi <b>tắt <code>.dbgconf</code></b>, trình điều khiển <code>ST-LINKIII-KEIL_SWO.dll</code> được trả lại quyền điều khiển nguyên bản: ở các chế độ chuẩn (như <code>Autodetect</code>, <code>SYSRESETREQ</code>, <code>with Pre-reset</code>, <code>under Reset</code>), nó tự động Reset chip về <code>8 MHz</code> trước khi nạp <code>.FLM</code>, giúp nạp Flash <b>PASS 100% mà không hề cần tới <code>flash_init.ini</code></b>!
+    </div>
+
+    <div class="callout special">
+      <span class="callout-title">🔬 Phát hiện cốt lõi 2: Kiểm chứng <code>0 WS</code>, <code>1 WS</code>, <code>2 WS</code> ở 72 MHz phân biệt ngay Chip Thật và Chip Clone!</span>
+      Khi quá trình nạp đã Pass nhờ tắt <code>.dbgconf</code>, việc thử thay đổi dòng lệnh <code>LL_FLASH_SetLatency(...)</code> trong <code>main.c</code> ở tốc độ <code>72 MHz</code> đã chứng minh sự khác biệt vật lý giữa các viên silicon:
+      <ul>
+        <li><b>Khi đặt <code>0 Wait State</code> (<code>LL_FLASH_LATENCY_0</code> @ 72 MHz):</b> Không bị lỗi <code>Contents mismatch</code> lúc nạp (vì lúc nạp chip đã được đưa về 8 MHz), nhưng ngay khi nạp xong và chạy code lên 72 MHz, bộ nhớ Flash không theo kịp tốc độ đọc lệnh của CPU (<code>13.88 ns &lt; 35 ns</code>) nên <b>cả chip thật lẫn chip clone đều bị treo cứng (HardFault) ngay lập tức</b>!</li>
+        <li><b>Khi đặt <code>1 Wait State</code> (<code>LL_FLASH_LATENCY_1</code> @ 72 MHz — Trường hợp đặc biệt):</b>
+          <ul>
+            <li><b>Trên Chip ST chính hãng (<code>0x20036410</code>):</b> Do phẩm chất bán dẫn tốt và có dự trữ thời gian (timing margin) cao, ở nhiệt độ phòng chip thật <b>vẫn chạy qua được ở mức <code>1 Wait State</code></b> và nháy đèn LED PC13 bình thường!</li>
+            <li><b>Trên Chip Clone (<code>0x00006410</code>):</b> Khi bấm nút Reset vật lý, đèn LED sáng lên rồi <b>bị treo đứng im luôn, không nhấp nháy</b>! Điều này chứng tỏ tốc độ đáp ứng tế bào nhớ Flash của chip clone chậm hơn, không chịu nổi mức <code>1 WS</code> ở 72 MHz, đồng thời chứng minh chúng ta đã can thiệp chính xác vào tầng xung nhịp và độ trễ Flash của chip chứ không phải do vòng lặp <code>Delay</code>.</li>
+          </ul>
+        </li>
+        <li><b>Thiết lập chuẩn cho Bảng 80 Test Cases (<code>2 Wait States</code>):</b> Do số lượng 80 Test Cases rất lớn và được thực hiện toàn bộ trên bo mạch <b>Chip Clone</b> để đảm bảo tính khắc nghiệt nhất (không thể giám sát chéo từng case một trên cả chip thật ở mức 1 WS), toàn bộ 80 Test Cases dưới đây đều được khóa cố định ở mức chuẩn <b><code>LL_FLASH_LATENCY_2</code> (2 Wait States)</b> theo đúng Datasheet RM0008 (<code>48 &lt; HCLK &le; 72 MHz</code>).</li>
+      </ul>
+    </div>
+    <a href="#fut-muc-luc" class="back-toc">🔼 Quay về Mục lục</a>
+
+    <!-- 1.2 -->
+    <h3 class="sub-title" id="fut-1-2">1.2. Kiến trúc 3 Bên (PC Host – ST-Link – STM32) &amp; Vị trí thực sự của tệp <code>.FLM</code> trong 80 Test Cases</h3>
+    <p>Khi nhìn vào bảng 80 Test Cases chỉ có 4 cột tùy chọn ở tab Debug (<code>Connect</code>, <code>Reset</code>, <code>Reset after Connect</code>, <code>Stop after Reset</code>), rất dễ thắc mắc: <b>"Tệp <code>.FLM</code> nằm ở đâu?"</b>. Thực tế, quá trình nhấn <code>F8</code> luôn là sự phối hợp của 3 bên qua 3 bước tuần tự <b>A ➔ B ➔ C</b>:</p>
+
+<pre><code>[ BÊN 1: PC HOST ]                    [ BÊN 2: MẠCH NẠP ]                   [ BÊN 3: VI ĐIỀU KHIỂN ]
+KeilC (UV4.exe)                       ST-Link V2 (Probe)                    STM32F103C8T6 (Target @ 72 MHz)
+ + ST-LINKIII-KEIL_SWO.dll ==(USB)==&gt; Nhận lệnh USB và điều khiển 2 đường:
+                                       ├─► Đường 1 (2 dây SWDIO/SWCLK): Truyền lệnh Halt CPU, SYSRESETREQ, VECTRESET, Đọc/Ghi RAM.
+                                       └─► Đường 2 (1 dây vật lý NRST): Kéo chân Reset cứng xuống 0V (khi Connect = under Reset / Pre-reset).
+
+========================================================================================================================
+BƯỚC A (Tab Debug — 4 Cột trong bảng 80 TC): Chuẩn bị trạng thái chip (Dừng CPU &amp; Hạ xung từ 72 MHz về 8 MHz).
+   │
+   ▼
+BƯỚC B (Tab Flash Download — Tệp STM32F10x_128.FLM): LUÔN TỰ ĐỘNG NHẢY VÀO CHẠY Ở CẢ 80 TEST CASES!
+   • UV4.exe bơm .FLM vào SRAM (0x20000000).
+   • Hàm Init() của .FLM LUÔN LUÔN ghi cứng: FLASH-&gt;ACR = 0x00000000 (Ép về 0 Wait State!).
+   • Hàm EraseSector() và ProgramPage() xóa và ghi code mới xuống 0x08000000.
+   │
+   ▼
+BƯỚC C (Verify &amp; Khởi chạy):
+   • Nếu Bước A ĐÃ ĐƯA CHIP VỀ 8 MHz ➔ Bước B ép ACR = 0 là hợp lệ ➔ Bước C đọc Verify ĐÚNG 100% (PASS)!
+   • Nếu Bước A ĐỂ LỌT CHIP Ở 72 MHz ➔ Bước B ép ACR = 0 làm mất phanh Wait State ➔ Bước C đọc trượt 8-byte (FAIL MISMATCH)!</code></pre>
+    <a href="#fut-muc-luc" class="back-toc">🔼 Quay về Mục lục</a>
+
+    <!-- 1.3 -->
+    <h3 class="sub-title" id="fut-1-3">1.3. Bản chất thông báo <code>Contents mismatch</code>: Diễn ra ở Phần cứng hay Phần mềm?</h3>
+    <ul>
+      <li><b>Không phải là tính năng chẩn đoán Wait State của KeilC:</b> Bản thân KeilC không hề biết chip đang bị thiếu Wait State; nó chỉ làm phép so sánh byte (<code>memcmp</code>) đơn thuần ở tầng phần mềm.</li>
+      <li><b>Sự cố trượt 8-byte diễn ra 100% ở Phần cứng (STM32 FLITF):</b> Khi <code>.FLM</code> ép <code>FLASH_ACR = 0</code> ở 72 MHz, chính mạch chốt đọc 64-bit (Read Latch) trên chip STM32 bị đọc sớm ở <code>13.88 ns</code> nên trả về dữ liệu cũ của địa chỉ <code>Addr − 8</code>.</li>
+      <li><b>Việc phát hiện và in địa chỉ diễn ra 100% ở Phần mềm (<code>.dll</code> + <code>UV4.exe</code>):</b> <code>ST-LINKIII-KEIL_SWO.dll</code> gửi lệnh đọc USB <code>0xF2 0x35</code> hút dữ liệu từ <code>0x08000000</code> về PC. Vì đọc tuần tự từng Word 32-bit, phần mềm KeilC đã phản ánh <b>chính xác tuyệt đối 100%</b> từng địa chỉ vật lý bị trượt nhịp chốt của phần cứng!</li>
+    </ul>
+    <a href="#fut-muc-luc" class="back-toc">🔼 Quay về Mục lục</a>
+
+    <!-- 1.4 (TAB B - BIỂU ĐỒ SAU KHI BỎ .DBGCONF & 5 NHÓM 80 TC) -->
+    <h3 class="sub-title" id="fut-1-4">1.4. Biểu đồ luồng nạp <code>UV4.exe</code> (SAU KHI BỎ <code>.dbgconf</code>) &amp; Giải phẫu 5 Nhóm trong 80 Test Cases</h3>
+    <h4 class="mini-title" id="fut-so-do-uv4">Biểu đồ Tương tác Quy trình Nạp SAU KHI BỎ CHỌN <code>.dbgconf</code> (Mô phỏng 5 Nhóm Kết quả của 80 Test Cases)</h4>
+    <p>Hãy bấm vào <b>5 nút Kịch bản</b> trên thanh công cụ của biểu đồ dưới đây để xem chính xác chuyện gì diễn ra giữa <b>PC Host</b>, <b>ST-Link</b> và <b>STM32 (cùng tệp <code>.FLM</code>)</b> ứng với từng nhóm trong 80 Test Cases của bạn:</p>
+
+    <div class="ufd-wrapper future-ufd">
+      <div class="ufd-header">
+        <h4>🟢 SƠ ĐỒ LUỒNG NẠP KEILC SAU KHI TẮT .DBGCONF — GIẢI MÃ 80 TEST CASES (TC_01 ➔ TC_80)</h4>
+        <p>Tương tác giữa Bước A (4 Cột Connect/Reset) ➔ Bước B (Thuật toán <code>.FLM</code> ép <code>ACR=0</code>) ➔ Bước C (Verify &amp; Chạy)</p>
+      </div>
+
+      <div class="ufd-toolbar">
+        <button type="button" class="ufd-btn" id="futPlayBtn" onclick="futTogglePlay()">▶ Chạy tự động</button>
+        <button type="button" class="ufd-btn" onclick="futPrev()">◀ Bước trước</button>
+        <button type="button" class="ufd-btn" onclick="futNext()">Bước tiếp ▶</button>
+        <button type="button" class="ufd-btn" onclick="futReset()">⟲ Xem toàn bộ / Reset</button>
+      </div>
+
+      <!-- 5 SCENARIO SELECTOR BUTTONS FOR THE 80 TEST CASES -->
+      <div class="ufd-phases" id="futScenarioBtns">
+        <button type="button" class="ufd-phase-btn active" onclick="futSetScenario(0)">✅ Nhóm A: Normal/Pulse + Autodetect/SYSRESETREQ (Pass Chạy Ngay)</button>
+        <button type="button" class="ufd-phase-btn" onclick="futSetScenario(1)">✅ Nhóm B: Pre-reset / under Reset + HW RESET (Pass Chờ Bấm Reset)</button>
+        <button type="button" class="ufd-phase-btn" onclick="futSetScenario(2)">❌ Nhóm C: Normal/Pulse + HW RESET / VECTRESET (Fail Mismatch)</button>
+        <button type="button" class="ufd-phase-btn" onclick="futSetScenario(3)">⚡ Nhóm D: without Stop + Unchecked (Fail Ngay Lập Tức)</button>
+        <button type="button" class="ufd-phase-btn" onclick="futSetScenario(4)">💀 Nhóm E: without Stop + HW RESET (Lỗi Target DLL &amp; FFFF0080)</button>
+      </div>
+
+      <div class="ufd-status-bar" id="futStatusBar">
+        <div class="ufd-status-title" id="futStatusTitle">👋 Chế độ Xem Tổng Quan (Sau khi tắt .dbgconf)</div>
+        <div class="ufd-status-desc" id="futStatusDesc">Chọn 1 trong 5 Nhóm kịch bản phía trên và nhấn <b>▶ Chạy tự động</b> (hoặc click từng hàng) để xem chi tiết.</div>
+      </div>
+
+      <div class="ufd-col-headers">
+        <div class="ufd-col-h pc">💻 BÊN 1: PC HOST (KEILC)<br/><span style="font-size:11.5px;font-weight:400;">UV4.exe + .dll (Đã tắt .dbgconf)</span></div>
+        <div class="ufd-col-h st">🔌 BÊN 2: MẠCH NẠP ST-LINK V2<br/><span style="font-size:11.5px;font-weight:400;">Đường SWD (Dữ liệu) &amp; Đường NRST (Vật lý)</span></div>
+        <div class="ufd-col-h mc">🧠 BÊN 3: CHIP STM32F103C8T6<br/><span style="font-size:11.5px;font-weight:400;">Đang chạy 72 MHz (2 Wait States chuẩn)</span></div>
+      </div>
+
+      <div class="ufd-rows" id="futRowsContainer">
+        <!-- 6 Synchronized Rows populated dynamically by JS for the 5 scenarios -->
+      </div>
+    </div>
+    <a href="#fut-muc-luc" class="back-toc">🔼 Quay về Mục lục</a>
+
+    <!-- 1.5 (TAB B - BẢNG 80 TEST CASES & PHÂN TÍCH ENGINEER) -->
+    <h3 class="sub-title" id="fut-1-5">1.5. Bảng Ma trận 80 Test Cases (<code>TC_01</code> ➔ <code>TC_80</code>) &amp; Phân tích Kỹ thuật Chuẩn Engineer</h3>
+
+    <h4 class="mini-title">A. Phân tích Chuyên sâu 5 Nhóm Hiện tượng trong 80 Test Cases</h4>
+    <div class="callout ok">
+      <span class="callout-title">1. Giải mã Nhóm PASS "Ngay lập tức" (44/80 Cases: <code>TC_01..04</code>, <code>09..12</code>, <code>17..20</code>, <code>25..36</code>, <code>41..52</code>, <code>57..60</code>, <code>66, 68, 74, 76</code>):</span>
+      <ul>
+        <li><b>Cơ chế ở Bước A (Trước khi <code>.FLM</code> chạy):</b> Tất cả 44 cases này đều có ít nhất <b>1 trong 2 lá chắn</b> làm sạch thanh ghi <code>RCC_CFGR</code> từ 72 MHz về <code>0x00000000</code> (HSI 8 MHz):
+          <br/>• Hoặc dùng <b>Reset mềm toàn chip qua dây SWD</b>: <code>Reset = SYSRESETREQ</code> hoặc <code>Autodetect</code> (khi đã tắt <code>.dbgconf</code>, <code>Autodetect</code> của Keil tự động gọi <code>SYSRESETREQ</code> ghi vào thanh ghi <code>SCB-&gt;AIRCR</code> tại <code>0xE000ED0C</code>).
+          <br/>• Hoặc dùng <b>Xung giữ Reset cứng lúc bắt tay</b>: <code>Connect = with Pre-reset</code> (<code>TC_17..32</code>) hoặc <code>Connect = under Reset</code> (<code>TC_33..48</code>). Ở bước bắt tay đầu phiên này, firmware ST-Link V2 thực sự kéo chân <code>NRST</code> xuống 0V (GND), ép toàn bộ chip về 8 MHz ngay từ giây đầu tiên (nhờ vậy kể cả khi chọn <code>VECTRESET</code> ở <code>TC_29..32</code> và <code>TC_45..48</code> thì chip vẫn Pass vì đã về 8 MHz từ bước Connect!).
+        </li>
+        <li><b>Cơ chế ở Bước B &amp; C:</b> Khi chip đã ở <code>8 MHz</code>, tệp <code>.FLM</code> nhảy vào ghi <code>FLASH_ACR = 0</code> là hoàn toàn hợp lệ, nên Verify Pass 100%. Cuối phiên nạp, lệnh Reset mềm qua SWD đánh thức CPU chạy code mới <b>ngay lập tức</b>.</li>
+      </ul>
+    </div>
+
+    <div class="callout special">
+      <span class="callout-title">2. Giải mã Nhóm PASS nhưng phải "Nhấn nút reset vật lí" mới chạy (8/80 Cases: <code>TC_21..24</code> và <code>TC_37..40</code>):</span>
+      <ul>
+        <li><b>Tại sao nạp và Verify lại PASS?</b> Vì cả 8 cases này đều dùng <code>Connect = with Pre-reset</code> hoặc <code>under Reset</code>, nên ở <b>đầu phiên nạp</b> ST-Link đã kéo chân <code>NRST</code> đưa chip về 8 MHz thành công.</li>
+        <li><b>Tại sao nạp xong chip lại đứng im, bắt buộc phải nhấn nút RESET vật lý trên board?</b> Vì cột <code>Reset</code> được chọn là <b><code>HW RESET</code></b>! Như báo cáo trên Arm Community <code>#44063</code> và EEVblog đã chỉ ra, driver ST-Link V2 trên Keil MDK có lỗi: <b>nó phát xung <code>NRST</code> ở đầu lệnh Connect, nhưng lại KHÔNG phát xung <code>NRST</code> ở cuối phiên nạp (bước Reset and Run) khi chọn <code>HW RESET</code></b>. Do đó, sau khi Verify xong, CPU vẫn nằm ở trạng thái dừng (<code>Halted</code>), tạo ra chế độ <i>"Nạp xong chờ nhấn nút Reset vật lý"</i>!</li>
+      </ul>
+    </div>
+
+    <div class="callout warn">
+      <span class="callout-title">3. Giải mã 3 Nhóm FAIL (28/80 Cases):</span>
+      <ul>
+        <li><b>Nhóm Fail 1 — Lỗi <code>Content mismatch(log_1.txt)</code> thông thường (20 Cases: <code>TC_05..08</code>, <code>13..16</code>, <code>53..56</code>, <code>61..64</code>, <code>77..80</code>):</b> Xảy ra khi kết hợp <code>Connect = Normal</code> (hoặc <code>Hw reset pulse</code> / <code>without Stop</code>) với <code>Reset = HW RESET</code> hoặc <code>VECTRESET</code>. Vì <code>VECTRESET</code> chỉ làm mới lõi CPU (bỏ qua <code>RCC</code>), còn lệnh <code>HW RESET</code> đơn lẻ không kéo được chân <code>NRST</code>, nên chip vẫn kẹt ở <b>72 MHz</b> khi <code>.FLM</code> ép <code>FLASH_ACR = 0</code> ➔ Trượt chốt 64-bit (<code>Addr - 8</code>) ở bước Verify!</li>
+        <li><b>Nhóm Fail 2 — <code>FAIL NGAY LẬP TỨC, RẤT NHANH HƠN CÁC TRƯỜNG HỢP TRÊN</code> (4 Cases: <code>TC_65, 67, 73, 75</code>):</b> Xảy ra khi chọn <b><code>Connect = without Stop</code></b> (không dừng CPU lúc kết nối) và <b><code>Reset after Connect = Unchecked</code></b> (không Reset sau khi kết nối). Lúc này CPU vẫn đang chạy vòng lặp <code>while(1)</code> ở 72 MHz trong khi Keil cố bơm <code>.FLM</code> vào RAM, làm xung đột truy cập bộ nhớ và văng lỗi <code>Content mismatch</code> ngay tức khắc! (Ngược lại, ở <code>TC_66, 68, 74, 76</code> khi tick <code>Reset after Connect = Checked</code>, lệnh <code>SYSRESETREQ</code> kịp thời dừng và reset chip về 8 MHz nên lại Pass!).</li>
+        <li><b>Nhóm Fail 3 — Lỗi <code>Could not stop Cortex-M device! ... Target DLL has been cancelled</code> &amp; Ô nhớ <code>0x08000000 = FFFF0080</code> (4 Cases: <code>TC_69..72</code>):</b> Xảy ra khi chọn <b><code>Connect = without Stop</code> + <code>Reset = HW RESET</code></b>. Vì <code>without Stop</code> không dừng CPU, còn <code>HW RESET</code> không phát được xung cứng, nên lõi Cortex-M3 <b>không bao giờ dừng lại</b>! Khi Keil gọi hàm <code>Erase</code> của <code>.FLM</code>, hoặc nó báo ngay <code>Could not stop Cortex-M device!</code>, hoặc trong lúc giằng co nó vừa xóa trắng Flash về <code>0xFFFFFFFF</code> và mới ghi nhá được đúng 2 byte đầu tiên (<code>0x0080</code>) vào <code>0x08000000</code> (thành <code>0xFFFF0080</code> trên ST-Link Utility) thì đứt kết nối SWD và báo <code>Error: Flash Erase/Download failed - Target DLL has been cancelled</code>!</li>
+      </ul>
+    </div>
+
+    <h4 class="mini-title">B. Bảng Dữ Liệu Đầy Đủ 80 Test Cases (<code>TC_01</code> ➔ <code>TC_80</code>) — Có Bộ Lọc Tương Tác</h4>
+    <div class="tc-filter-bar">
+      <span style="font-size:12.5px;font-weight:700;color:var(--text-muted);">Lọc nhanh:</span>
+      <button type="button" class="tc-filter-btn active" onclick="filter80TC('all', this)">Tất cả (80 TC)</button>
+      <button type="button" class="tc-filter-btn" onclick="filter80TC('Pass', this)">✅ Chỉ hiện PASS (52 TC)</button>
+      <button type="button" class="tc-filter-btn" onclick="filter80TC('Fail', this)">❌ Chỉ hiện FAIL (28 TC)</button>
+      <button type="button" class="tc-filter-btn" onclick="filter80TC('Normal', this)">Connect: Normal (TC 01–16)</button>
+      <button type="button" class="tc-filter-btn" onclick="filter80TC('with Pre-reset', this)">with Pre-reset (TC 17–32)</button>
+      <button type="button" class="tc-filter-btn" onclick="filter80TC('under Reset', this)">under Reset (TC 33–48)</button>
+      <button type="button" class="tc-filter-btn" onclick="filter80TC('Hw reset pulse', this)">Hw reset pulse (TC 49–64)</button>
+      <button type="button" class="tc-filter-btn" onclick="filter80TC('without Stop', this)">without Stop (TC 65–80)</button>
+    </div>
+
+    <div class="table-wrap" style="max-height: 620px; overflow-y: auto;">
+      <table>
+        <thead style="position: sticky; top: 0; z-index: 5;">
+          <tr>
+            <th>Mã TC</th>
+            <th>Connect</th>
+            <th>Reset</th>
+            <th>Reset after Connect</th>
+            <th>Stop after Reset</th>
+            <th>Kết quả (Pass/Fail)</th>
+            <th>Ghi chú thực nghiệm &amp; Giải thích kỹ thuật</th>
+          </tr>
+        </thead>
+        <tbody id="tc80TableBody">
+          <!-- Populated by JavaScript with all 80 exact rows -->
+        </tbody>
+      </table>
+    </div>
+    <a href="#fut-muc-luc" class="back-toc">🔼 Quay về Mục lục</a>
+
+    <!-- 1.6 -->
+    <h3 class="sub-title" id="fut-1-6">1.6. Tổng kết 3 Quy tắc Vàng cấu hình KeilC (Sau khi đã tắt <code>.dbgconf</code>)</h3>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Mục đích sử dụng trên KeilC</th><th>Thiết lập chuẩn trong <code>Debug ➔ Settings</code> (Sau khi tắt Pack Description)</th><th>Mã Test Case đại diện</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><b>1. Nạp xong tự chạy ngay ở 72 MHz (Khuyên dùng nhất — Không cần dây NRST, không cần <code>.ini</code>)</b></td>
+            <td>• <code>Pack ➔ Debug Description</code>: <b>Unchecked (Disable)</b><br/>• <code>Connect</code>: <b>Normal</b> (hoặc <b>under Reset</b>)<br/>• <code>Reset</code>: <b>SYSRESETREQ</b> (hoặc <b>Autodetect</b>)<br/>• <code>Reset after Connect</code>: <b>Checked</b></td>
+            <td><code>TC_01..04</code>, <code>TC_09..12</code>, <code>TC_41..44</code> <span class="badge b-measured">[Pass Ngay lập tức]</span></td>
+          </tr>
+          <tr>
+            <td><b>2. Nạp xong giữ chip đứng im chờ nhấn nút RESET vật lý trên board</b></td>
+            <td>• <code>Pack ➔ Debug Description</code>: <b>Unchecked (Disable)</b><br/>• <code>Connect</code>: <b>under Reset</b> (hoặc <b>with Pre-reset</b>)<br/>• <code>Reset</code>: <b>HW RESET</b> (Hoặc bỏ tick <i>Reset and Run</i> ở tab Flash Download)</td>
+            <td><code>TC_21..24</code>, <code>TC_37..40</code> <span class="badge b-measured">[Pass Chờ nhấn Reset vật lý]</span></td>
+          </tr>
+          <tr>
+            <td><b>3. Cấu hình CẤM KỴ khi chạy 72 MHz</b></td>
+            <td>• Dùng <code>VECTRESET</code> hoặc <code>HW RESET</code> khi <code>Connect = Normal / Hw reset pulse</code><br/>• Dùng <code>Connect = without Stop</code> khi không bật <code>SYSRESETREQ + Reset after Connect</code></td>
+            <td><code>TC_05..08</code>, <code>TC_13..16</code>, <code>TC_65..80</code> <span class="badge b-fail">[Fail Mismatch / Target DLL]</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <a href="#fut-muc-luc" class="back-toc">🔼 Quay về Mục lục</a>
+
+    <!-- 1.7 -->
+    <h3 class="sub-title" id="fut-1-7">1.7. Tổng hợp Dẫn chứng từ Datasheet, Reference Manual, Blog và Cộng đồng</h3>
+    <div class="ref-list">
+      <div class="ref-box" id="fut-ref-1"><b>[1] <span class="badge b-doc">[Tài liệu]</span> Keil — ULINKpro Connect &amp; Reset Options:</b> <a href="https://www.keil.com/support/man/docs/ulinkpro/ulinkpro_ctx_debug.asp" target="_blank">https://www.keil.com/support/man/docs/ulinkpro/ulinkpro_ctx_debug.asp</a></div>
+      <div class="ref-box" id="fut-ref-2"><b>[2] <span class="badge b-doc">[Tài liệu]</span> Keil — J-Link Debug (Connect, Reset, SYSRESETREQ vs VECTRESET):</b> <a href="https://www.keil.com/support/man/docs/jlink/jlink_conf_debug.asp" target="_blank">https://www.keil.com/support/man/docs/jlink/jlink_conf_debug.asp</a></div>
+      <div class="ref-box" id="fut-ref-3"><b>[3] <span class="badge b-doc">[Tài liệu]</span> IAR — ST-LINK Setup (Reset types):</b> <a href="https://docs.iar.com/ewarm/9.7/en/c-spy-debugging/debugger-options/reference-information-on-c-spy-hardware-debugger-driver-options/st-link---setup.html" target="_blank">https://docs.iar.com/ewarm/9.7/en/c-spy-debugging/debugger-options/reference-information-on-c-spy-hardware-debugger-driver-options/st-link---setup.html</a></div>
+      <div class="ref-box" id="fut-ref-4"><b>[4] <span class="badge b-doc">[Tài liệu]</span> CMSIS-Pack — Use of debug descriptions in µVision (<code>.dbgconf</code>):</b> <a href="https://arm-software.github.io/CMSIS_5/5.7.0/Pack/html/dbg_sqns_uvision.html" target="_blank">https://arm-software.github.io/CMSIS_5/5.7.0/Pack/html/dbg_sqns_uvision.html</a></div>
+      <div class="ref-box comm-ref" id="fut-ref-5"><b>[5] <span class="badge b-comm">[Cộng đồng]</span> Arm Community `#44063` — MDK 5.28 problem with Reset and Run:</b> <a href="https://community.arm.com/support-forums/f/keil-forum/44063/mdk-arm-5-28-problem-with-reset-and-run" target="_blank">https://community.arm.com/support-forums/f/keil-forum/44063/mdk-arm-5-28-problem-with-reset-and-run</a></div>
+      <div class="ref-box comm-ref" id="fut-ref-6"><b>[6] <span class="badge b-comm">[Cộng đồng]</span> EEVblog — ST-Link V2 không reset target sau khi nạp (Giải pháp tắt Pack Debug Description):</b> <a href="https://eevblog.com/forum/microcontrollers/cant-get-stm-link-v2-debuggerprogrammer-to-reset-the-target-after-programming" target="_blank">https://eevblog.com/forum/microcontrollers/cant-get-stm-link-v2-debuggerprogrammer-to-reset-the-target-after-programming</a></div>
+      <div class="ref-box comm-ref" id="fut-ref-7"><b>[7] <span class="badge b-comm">[Cộng đồng]</span> Arm Community `#47144` — PDSC Sequence Execution failed:</b> <a href="https://community.arm.com/support-forums/f/keil-forum/47144/pdsc-sequence-execution-failed-error/167512" target="_blank">https://community.arm.com/support-forums/f/keil-forum/47144/pdsc-sequence-execution-failed-error/167512</a></div>
+      <div class="ref-box" id="fut-ref-8"><b>[8] <span class="badge b-doc">[Tài liệu]</span> STMicroelectronics — Errata sheet STM32F101/102/103x8/B (DocID14574 Rev 13):</b> <a href="https://git.ondrovo.com/gex/gex-platform-info/raw/branch/master/F103_BLUEPILL/stm32f103%20errata.pdf" target="_blank">https://git.ondrovo.com/gex/gex-platform-info/raw/branch/master/F103_BLUEPILL/stm32f103%20errata.pdf</a></div>
+      <div class="ref-box comm-ref" id="fut-ref-9"><b>[9] <span class="badge b-comm">[Cộng đồng]</span> ST Community `#0D50X00009XkbE7` — SYSCLK trên STM32F101 (0 WS ở 72 MHz crash):</b> <a href="https://community.st.com/s/question/0D50X00009XkbE7/sysclk-on-stm32f101" target="_blank">https://community.st.com/s/question/0D50X00009XkbE7/sysclk-on-stm32f101</a></div>
+      <div class="ref-box comm-ref" id="fut-ref-10"><b>[10] <span class="badge b-comm">[Cộng đồng]</span> ST Community `#567522` — ST-Link + IAR debugger (Dung sai Wait State giữa các board):</b> <a href="https://community.st.com/t5/stm32-mcus-products/st-link-iar-debugger/td-p/567522" target="_blank">https://community.st.com/t5/stm32-mcus-products/st-link-iar-debugger/td-p/567522</a></div>
+      <div class="ref-box comm-ref" id="fut-ref-13"><b>[13] <span class="badge b-comm">[Cộng đồng]</span> CSDN Blog `#128350295` — Trích dẫn <code>FlashPrg.c</code> của Keil (<code>Init</code> đặt <code>ACR = 0</code>):</b> <a href="https://blog.csdn.net/sinat_31039061/article/details/128350295" target="_blank">https://blog.csdn.net/sinat_31039061/article/details/128350295</a></div>
+      <div class="ref-box comm-ref" id="fut-ref-14"><b>[14] <span class="badge b-comm">[Cộng đồng]</span> RIOT-OS — <code>cpu/stm32f1/cpu.c</code> (Timeout chống treo HSE):</b> <a href="https://git.riot-os.org/RIOT-OS/RIOT/blame/commit/3711a6d406e49a816a75492bf1e6285cf6b8590c/cpu/stm32f1/cpu.c" target="_blank">https://git.riot-os.org/RIOT-OS/RIOT/blame/commit/3711a6d406e49a816a75492bf1e6285cf6b8590c/cpu/stm32f1/cpu.c</a></div>
+    </div>
+    <a href="#fut-muc-luc" class="back-toc">🔼 Quay về Mục lục</a>
+  </section>
+
+  <!-- PHẦN 2 (TAB B) -->
+  <section class="section-card" id="fut-phan-2">
+    <div class="part-title">
+      <span>PHẦN 2: THỰC NGHIỆM TRÊN STM32CUBEIDE &amp; EXTERNAL TOOLS CLI</span>
+      <a href="#fut-muc-luc" class="back-toc">🔼 Quay về Mục lục</a>
+    </div>
+    <h3 class="sub-title" id="fut-2-1">2.1. Đối chiếu kiến trúc GDB Server của STM32CubeIDE với KeilC (Sau khi tắt <code>.dbgconf</code>)</h3>
+    <p>Khi KeilC đã tắt <code>.dbgconf</code> và dùng <code>SYSRESETREQ</code> (hoặc <code>under Reset</code>), hành vi của KeilC trở nên tương đồng với chế độ <code>Connect under reset</code> của <b>ST-LINK GDB Server / STM32CubeProgrammer</b> trên STM32CubeIDE: cả hai đều đảm bảo đưa chip về 8 MHz an toàn trước khi can thiệp vào bộ nhớ Flash.</p>
+    <h3 class="sub-title" id="fut-2-2">2.2. Khởi tạo Project <code>LED_PC13_LL_CUBEIDE</code> &amp; Cấu hình Clock 72 MHz (Chuẩn 2 Wait States)</h3>
+    <p>Trong <code>Clock Configuration</code> của CubeMX, khi nhập <code>HCLK = 72 MHz</code>, CubeMX tự động gán cứng <code>LL_FLASH_SetLatency(LL_FLASH_LATENCY_2)</code> ngay đầu hàm <code>SystemClock_Config()</code>, đảm bảo cả chip thật lẫn chip clone đều vận hành ổn định tuyệt đối.</p>
+    <h3 class="sub-title" id="fut-2-3">2.3. Phòng chống khóa cổng SWD (<code>LL_GPIO_AF_Remap_SWJ_NOJTAG</code>) &amp; Cơ chế <code>BOOT0 = 1</code></h3>
+    <p>Luôn cấu hình <code>SYS ➔ Debug = Serial Wire</code> để sinh hàm <code>LL_GPIO_AF_Remap_SWJ_NOJTAG()</code>, giữ lại 2 chân <code>PA13 (SWDIO)</code> và <code>PA14 (SWCLK)</code> cho mọi lần nạp tiếp theo.</p>
+    <h3 class="sub-title" id="fut-2-4">2.4. Tách biệt 2 chế độ nạp bằng <code>STM32_Programmer_CLI.exe</code> &amp; Fix lỗi <code>${project_loc}</code></h3>
+    <ul>
+      <li><b>Chế độ A (Nạp xong chạy ngay):</b> Bấm nút <b>Run</b> trên thanh công cụ (hoặc dùng <code>TC_01..04</code>, <code>TC_09..12</code> bên KeilC).</li>
+      <li><b>Chế độ B (Nạp xong đứng im chờ bấm nút RESET vật lý):</b> Gọi <code>STM32_Programmer_CLI.exe</code> qua External Tools không có cờ <code>-rst</code> (tương đương với nhóm <code>TC_21..24</code> và <code>TC_37..40</code> bên KeilC):</li>
+    </ul>
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy Args</button><code>-c port=SWD -d "C:\Users\ASUS\Desktop\LED_PC13_LL_CUBEIDE\Debug\LED_PC13_LL_CUBEIDE.elf" -v</code></pre>
+    <a href="#fut-muc-luc" class="back-toc">🔼 Quay về Mục lục</a>
+  </section>
+
+  <!-- PHẦN 3 (TAB B) -->
+  <section class="section-card" id="fut-phan-3">
+    <div class="part-title">
+      <span>PHẦN 3: TÙY BIẾN THUẬT TOÁN NẠP (<code>.FLM</code> / <code>.STLDR</code>) TỪ PRO DEV &amp; CHÍNH HÃNG</span>
+      <a href="#fut-muc-luc" class="back-toc">🔼 Quay về Mục lục</a>
+    </div>
+    <h3 class="sub-title" id="fut-3-1">3.1. Các kho GitHub mã nguồn mở &amp; Cách tự viết lại hàm <code>Init()</code> trong <code>FlashPrg.c</code></h3>
+    <p>Tham khảo kho mã nguồn <a href="https://github.com/cturvey/stm32extldr" target="_blank"><code>github.com/cturvey/stm32extldr</code></a> và tài liệu Keil AN333: Nếu tự biên dịch lại tệp <code>STM32F10x_128.FLM</code> từ thư mục <code>ARM\Flash\STM32F10x</code>, chỉ cần đổi dòng <code>FLASH-&gt;ACR = 0;</code> trong <code>FlashPrg.c</code> thành <code>FLASH-&gt;ACR = 0x00000032;</code> (giữ nguyên 2 Wait States + Prefetch ON) hoặc chủ động hạ <code>RCC-&gt;CFGR = 0;</code> ngay trong <code>Init()</code> thì tệp <code>.FLM</code> sẽ miễn nhiễm hoàn toàn với lỗi <code>Contents mismatch</code> ở mọi cấu hình.</p>
+    <a href="#fut-muc-luc" class="back-toc">🔼 Quay về Mục lục</a>
+  </section>
+
+  <!-- PHẦN 4 (TAB B) -->
+  <section class="section-card" id="fut-phan-4">
+    <div class="part-title">
+      <span>PHẦN 4: MÃ NGUỒN HOÀN CHỈNH (<code>main.c</code> CHUẨN LL CHO STM32CUBEIDE &amp; KEILC — CHUẨN 2 WAIT STATES)</span>
+      <a href="#fut-muc-luc" class="back-toc">🔼 Quay về Mục lục</a>
+    </div>
+
+    <h3 class="sub-title" id="fut-4-1">4.1. File <code>Core/Src/main.c</code> chuẩn trên STM32CubeIDE (Đầy đủ bảo vệ USER CODE &amp; <code>LL_FLASH_LATENCY_2</code>)</h3>
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy Code CubeIDE</button><code>/* USER CODE BEGIN Header */
+/**
+  ******************************************************************************
+  * @file           : main.c
+  * @brief          : Main program body (STM32CubeIDE - 72MHz HSE LL - 2 Wait States)
+  ******************************************************************************
+  */
+/* USER CODE END Header */
+#include "main.h"
+
+void SystemClock_Config(void);
+static void MX_GPIO_Init(void);
+
+int main(void)
+{
+  LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_AFIO);
+  LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_PWR);
+  NVIC_SetPriorityGrouping(NVIC_PRIORITYGROUP_4);
+  NVIC_SetPriority(SysTick_IRQn, NVIC_EncodePriority(NVIC_GetPriorityGrouping(),15, 0));
+
+  /* Giữ cổng nạp SWD luôn mở */
+  LL_GPIO_AF_Remap_SWJ_NOJTAG();
+
+  SystemClock_Config();
+  MX_GPIO_Init();
+
+  while (1)
+  {
+    LL_GPIO_TogglePin(GPIOC, LL_GPIO_PIN_13);
+    for (volatile int i = 0; i &lt; 900000; i++);
+  }
+}
+
+void SystemClock_Config(void)
+{
+  /* Bắt buộc thiết lập 2 Wait States (0x32) cho 72 MHz trên cả Chip Thật lẫn Chip Clone */
+  LL_FLASH_SetLatency(LL_FLASH_LATENCY_2);
+  while(LL_FLASH_GetLatency() != LL_FLASH_LATENCY_2) {}
+
+  LL_RCC_HSE_Enable();
+  while(LL_RCC_HSE_IsReady() != 1) {}
+
+  LL_RCC_PLL_ConfigDomain_SYS(LL_RCC_PLLSOURCE_HSE_DIV_1, LL_RCC_PLL_MUL_9);
+  LL_RCC_PLL_Enable();
+  while(LL_RCC_PLL_IsReady() != 1) {}
+
+  LL_RCC_SetAHBPrescaler(LL_RCC_SYSCLK_DIV_1);
+  LL_RCC_SetAPB1Prescaler(LL_RCC_APB1_DIV_2);
+  LL_RCC_SetAPB2Prescaler(LL_RCC_APB2_DIV_1);
+  LL_RCC_SetSysClkSource(LL_RCC_SYS_CLKSOURCE_PLL);
+  while(LL_RCC_GetSysClkSource() != LL_RCC_SYS_CLKSOURCE_STATUS_PLL) {}
+
+  LL_Init1msTick(72000000);
+  LL_SetSystemCoreClock(72000000);
+}
+
+static void MX_GPIO_Init(void)
+{
+  LL_GPIO_InitTypeDef GPIO_InitStruct = {0};
+  LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_GPIOC);
+  LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_GPIOD);
+
+  LL_GPIO_ResetOutputPin(GPIOC, LL_GPIO_PIN_13);
+  GPIO_InitStruct.Pin = LL_GPIO_PIN_13;
+  GPIO_InitStruct.Mode = LL_GPIO_MODE_OUTPUT;
+  GPIO_InitStruct.Speed = LL_GPIO_SPEED_FREQ_LOW;
+  GPIO_InitStruct.OutputType = LL_GPIO_OUTPUT_PUSHPULL;
+  LL_GPIO_Init(GPIOC, &amp;GPIO_InitStruct);
+}</code></pre>
+
+    <h3 class="sub-title" id="fut-4-2">4.2. File <code>main.c</code> chuẩn hóa cuối cùng trên KeilC (Chuẩn <code>LL_FLASH_LATENCY_2</code> + Timeout <code>WAIT_MAX</code>)</h3>
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy Code KeilC Chuẩn</button><code>#include "stm32f1xx.h"        
+#include "stm32f1xx_ll_bus.h"   
+#include "stm32f1xx_ll_gpio.h"  
+#include "stm32f1xx_ll_rcc.h"   
+#include "stm32f1xx_ll_system.h"
+#include "stm32f1xx_ll_utils.h"
+
+#define WAIT_MAX 500000UL
+
+void Reg_SystemClock_Config_72MHz(void);
+void Reg_Delay_Spin(uint32_t count);
+void Reg_GPIO_Init_Custom(void);
+
+int main(void)
+{
+  Reg_SystemClock_Config_72MHz(); 
+  Reg_GPIO_Init_Custom();
+
+  while (1)
+  {
+    LL_GPIO_TogglePin(GPIOC, LL_GPIO_PIN_13);
+    Reg_Delay_Spin(900000); 
+  }
+}
+
+void Reg_SystemClock_Config_72MHz(void)
+{
+    // 1. Thiết lập chuẩn 2 Wait States (FLASH_ACR = 0x32) cho 72 MHz
+    LL_FLASH_SetLatency(LL_FLASH_LATENCY_2);
+    while (LL_FLASH_GetLatency() != LL_FLASH_LATENCY_2) {}
+
+    // 2. Bật HSE kèm bộ đếm Timeout chống treo vĩnh viễn
+    LL_RCC_HSE_Enable();
+    uint32_t n = WAIT_MAX;
+    while (LL_RCC_HSE_IsReady() != 1 &amp;&amp; --n) {}
+    if (n == 0) { return; } // Fallback an toàn về HSI 8 MHz nếu thạch anh lỗi
+    
+    // 3. Nhân PLL: 8 MHz / 1 * 9 = 72 MHz
+    LL_RCC_PLL_ConfigDomain_SYS(LL_RCC_PLLSOURCE_HSE_DIV_1, LL_RCC_PLL_MUL_9);
+    LL_RCC_PLL_Enable();
+    n = WAIT_MAX;
+    while (LL_RCC_PLL_IsReady() != 1 &amp;&amp; --n) {}
+    if (n == 0) { return; }
+    
+    // 4. Chia Bus AHB (/1), APB1 (/2 = 36MHz max), APB2 (/1) và chuyển sang PLL
+    LL_RCC_SetAHBPrescaler(LL_RCC_SYSCLK_DIV_1);
+    LL_RCC_SetAPB1Prescaler(LL_RCC_APB1_DIV_2);
+    LL_RCC_SetAPB2Prescaler(LL_RCC_APB2_DIV_1);
+    LL_RCC_SetSysClkSource(LL_RCC_SYS_CLKSOURCE_PLL);
+    while (LL_RCC_GetSysClkSource() != LL_RCC_SYS_CLKSOURCE_STATUS_PLL) {}
+
+    LL_SetSystemCoreClock(72000000);
+}
+
+void Reg_GPIO_Init_Custom(void)
+{
+    LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_GPIOC);
+    LL_GPIO_SetPinMode(GPIOC, LL_GPIO_PIN_13, LL_GPIO_MODE_OUTPUT);             
+    LL_GPIO_SetPinOutputType(GPIOC, LL_GPIO_PIN_13, LL_GPIO_OUTPUT_PUSHPULL);  
+    LL_GPIO_SetPinSpeed(GPIOC, LL_GPIO_PIN_13, LL_GPIO_SPEED_FREQ_MEDIUM); 
+}
+
+void Reg_Delay_Spin(uint32_t count) 
+{
+    for (volatile uint32_t i = 0; i &lt; count; i++) { __asm("NOP"); }
+}</code></pre>
+    <a href="#fut-muc-luc" class="back-toc">🔼 Quay về Mục lục</a>
+  </section>
+
+</div>
+
+<!-- ==================== JAVASCRIPT ENGINE ==================== -->
+<script>
+  /* 1. Theme Switcher */
+  function toggleTheme() {
+    const html = document.documentElement;
+    const btn = document.getElementById('themeToggle');
+    if (html.getAttribute('data-theme') === 'dark') {
+      html.setAttribute('data-theme', 'light');
+      btn.textContent = '🌙 Giao diện Tối';
+    } else {
+      html.setAttribute('data-theme', 'dark');
+      btn.textContent = '☀️ Giao diện Sáng';
+    }
+  }
+
+  /* 2. Copy Code Button */
+  function copyCode(btn) {
+    const codeEl = btn.parentElement.querySelector('code');
+    navigator.clipboard.writeText(codeEl.innerText).then(() => {
+      const oldText = btn.textContent;
+      btn.textContent = '✅ Đã Copy!';
+      setTimeout(() => { btn.textContent = oldText; }, 1800);
+    });
+  }
+
+  /* 3. Universal Smooth Scroll & Topbar Navigation Fix */
+  let activeMasterMode = 'past';
+
+  function scrollToPageTop() {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function highlightElementBriefly(el) {
+    if (!el) return;
+    el.classList.remove('blink-active');
+    void el.offsetWidth;
+    el.classList.add('blink-active');
+    setTimeout(() => { el.classList.remove('blink-active'); }, 2500);
+  }
+
+  function jumpToSection(shortId, btnEl) {
+    const prefix = activeMasterMode === 'past' ? 'past-' : 'fut-';
+    const targetId = prefix + shortId;
+    const targetEl = document.getElementById(targetId);
+
+    document.querySelectorAll('#topbarNavLinks .nav-pill').forEach(b => b.classList.remove('active-pill'));
+    if (btnEl) btnEl.classList.add('active-pill');
+
+    if (targetEl) {
+      const topbarHeight = document.getElementById('top-bar').offsetHeight || 68;
+      const y = targetEl.getBoundingClientRect().top + window.pageYOffset - topbarHeight - 14;
+      window.scrollTo({ top: Math.max(0, y), behavior: 'smooth' });
+      highlightElementBriefly(targetEl);
+    }
+  }
+
+  /* Intercept all internal anchor links (<a href="#...">) in TOC and Back-to-TOC so they always scroll reliably */
+  document.addEventListener('click', function(e) {
+    const link = e.target.closest('a[href^="#"]');
+    if (!link) return;
+    if (link.classList.contains('badge-link')) return; // Handled by flashRef()
+
+    const href = link.getAttribute('href');
+    if (!href || href.length < 2) return;
+    const targetId = href.substring(1);
+
+    e.preventDefault();
+    if (targetId.startsWith('past-') && activeMasterMode !== 'past') {
+      switchMasterMode('past');
+    } else if (targetId.startsWith('fut-') && activeMasterMode !== 'future') {
+      switchMasterMode('future');
+    }
+
+    const targetEl = document.getElementById(targetId);
+    if (targetEl) {
+      const topbarHeight = document.getElementById('top-bar').offsetHeight || 68;
+      const y = targetEl.getBoundingClientRect().top + window.pageYOffset - topbarHeight - 14;
+      window.scrollTo({ top: Math.max(0, y), behavior: 'smooth' });
+      highlightElementBriefly(targetEl);
+    }
+  });
+
+  /* 4. Blinking Reference Box Highlight */
+  function flashRef(event, refIds) {
+    event.preventDefault();
+    if (!Array.isArray(refIds)) refIds = [refIds];
+    const firstEl = document.getElementById(refIds[0]);
+    if (firstEl) {
+      const topbarHeight = document.getElementById('top-bar').offsetHeight || 68;
+      const y = firstEl.getBoundingClientRect().top + window.pageYOffset - topbarHeight - 40;
+      window.scrollTo({ top: Math.max(0, y), behavior: 'smooth' });
+    }
+    refIds.forEach(id => {
+      const el = document.getElementById(id);
+      highlightElementBriefly(el);
+    });
+  }
+
+  /* 5. Master Mode Switcher (Tab A: Past vs Tab B: Future) */
+  function switchMasterMode(mode) {
+    activeMasterMode = mode;
+    document.getElementById('btnModePast').classList.toggle('active', mode === 'past');
+    document.getElementById('btnModeFuture').classList.toggle('active', mode === 'future');
+    document.getElementById('view-past').classList.toggle('active', mode === 'past');
+    document.getElementById('view-future').classList.toggle('active', mode === 'future');
+    document.querySelectorAll('#topbarNavLinks .nav-pill').forEach(b => b.classList.remove('active-pill'));
+    pastStopPlay();
+    futStopPlay();
+  }
+
+  /* =========================================================================
+     6. DIAGRAM ENGINE FOR TAB A (PAST: BEFORE .DBGCONF REMOVAL)
+     ========================================================================= */
+  const PAST_STEPS = [
+    { title: 'Bước 1 — Khởi tạo phiên nạp (Khi .dbgconf đang Enable)', desc: '<code>UV4.exe</code> gọi <code>ST-LINKIII-KEIL_SWO.dll</code> nhưng bị ép thực thi theo các chuỗi <code>Sequence</code> trong tệp <code>Target_1_STM32F103C8_1.0.0.dbgconf</code>.' },
+    { title: 'Bước 2 — .dbgconf chèn ép các tùy chọn Connect / Reset', desc: 'Do <code>Pack: Debug Description = Enable</code>, kịch bản của Pack chỉ dừng lõi CPU (<code>Halt</code>) mà không phát lệnh Reset ngoại vi <code>RCC</code>, khiến chip <b>vẫn bị kẹt ở 72 MHz</b>!' },
+    { title: 'Bước 3 — Chốt chặn duy nhất thời kỳ đầu: flash_init.ini', descFail: '⚠️ <b>[Không có .ini]:</b> Vì Bước 2 đã bị <code>.dbgconf</code> vô hiệu hóa, không có gì hạ xung nhịp xuống ➔ Chip <b>vẫn phóng ở 72 MHz</b> khi bước vào nạp!', descPass: '✅ <b>[Có flash_init.ini]:</b> Hàm <code>ResetClocks()</code> trong <code>.ini</code> cưỡng bức ghi vào <code>RCC_CR</code> và <code>RCC_CFGR</code> để tắt PLL, hạ chip về <b>HSI 8 MHz</b>!' },
+    { title: 'Bước 4 & 5 — Bơm tệp thuật toán STM32F10x_128.FLM vào SRAM', desc: '<code>UV4.exe</code> đẩy mã máy của <code>.FLM</code> qua cổng AHB-AP vào địa chỉ <code>0x20000000</code> (SRAM).' },
+    { title: '🚨 Bước 6 — Thủ phạm FLM_Init() ép FLASH_ACR = 0', desc: 'Hàm <code>Init()</code> của <code>.FLM</code> chạy trong SRAM ghi cứng <b><code>FLASH->ACR = 0x00000000</code> (0 Wait State)</b> vì tưởng rằng chip đã về 8 MHz!' },
+    { title: 'Bước 7 & 8 — Xóa và Ghi Flash (Thành công 100%)', desc: 'Quá trình <code>Full Chip Erase</code> và <code>ProgramPage</code> có cờ <code>BSY</code> đồng bộ nên dữ liệu mới được ghi vào <code>0x08000000</code> đúng 100%.' },
+    { titleFail: '💥 Bước 9 & 10 — NỔ LỖI CONTENTS MISMATCH Ở 72 MHz!', descFail: 'Đọc Verify ở <b>72 MHz</b> với <b>0 Wait State</b> làm chốt 64-bit bị đọc sớm (<code>13.88 ns &lt; 35 ns</code>), trả về dữ liệu của <code>Addr − 8</code>!', titlePass: '🎉 Bước 9 & 10 — VERIFY OK NHỜ FLASH_INIT.INI!', descPass: 'Nhờ <code>flash_init.ini</code> đã hạ xung về <b>8 MHz</b> ở Bước 3, việc đọc với <code>0 Wait State</code> khớp 100%!' }
+  ];
+
+  let pastCur = -1, pastPlaying = false, pastTimer = null, pastPassMode = false;
+
+  function pastRender() {
+    const rows = document.querySelectorAll('#pastRowsContainer .ufd-row');
+    const bar = document.getElementById('pastStatusBar');
+    const title = document.getElementById('pastStatusTitle');
+    const desc = document.getElementById('pastStatusDesc');
+    const r3 = document.getElementById('pastRow3Mc');
+    const r7 = document.getElementById('pastRow7Mc');
+
+    if (pastPassMode) {
+      r3.innerHTML = `<span class="ufd-step-tag" style="background:rgba(16,185,129,0.25);color:#6ee7b7;">✅ .INI HẠ VỀ 8 MHz</span><div>Nhờ <code>flash_init.ini</code>, PLL đã tắt và chip về lại <b>8 MHz</b>!</div>`;
+      r7.innerHTML = `<span class="ufd-step-tag" style="background:rgba(16,185,129,0.25);color:#6ee7b7;">🎉 VERIFY OK!</span><div>Ở <b>8 MHz + 0 WS</b>: Đọc chuẩn xác 100%!</div>`;
+    } else {
+      r3.innerHTML = `<span class="ufd-step-tag" style="background:rgba(244,63,94,0.25);color:#fda4af;">⚠️ VẪN KẸT 72 MHz</span><div>Không có <code>.ini</code> + <code>.dbgconf</code> chặn Reset ➔ Chip <b>vẫn ở 72 MHz</b>!</div>`;
+      r7.innerHTML = `<span class="ufd-step-tag" style="background:rgba(244,63,94,0.25);color:#fda4af;">💥 NỔ MISMATCH!</span><div>Ở <b>72 MHz + 0 WS</b>: Trượt 8-byte (<code>Addr - 8</code>)!</div>`;
+    }
+
+    bar.classList.remove('danger', 'ok');
+    if (pastCur === -1) {
+      rows.forEach(r => { r.className = 'ufd-row passed'; });
+      title.innerHTML = '👋 Chế độ Xem Tổng Quan (Quy trình cũ khi .dbgconf đang bật)';
+      desc.innerHTML = 'Nhấn <b>▶ Chạy tự động</b> hoặc click vào từng hàng bên dưới để xem chi tiết.';
+      return;
+    }
+
+    const st = PAST_STEPS[pastCur];
+    rows.forEach((r, idx) => {
+      r.className = 'ufd-row';
+      if (idx < pastCur) r.classList.add('passed');
+      else if (idx === pastCur) {
+        r.classList.add('active');
+        if (idx === 1 || idx === 4 || (idx === 2 && !pastPassMode) || (idx === 6 && !pastPassMode)) r.classList.add('warn-row');
+        else if ((idx === 2 && pastPassMode) || (idx === 6 && pastPassMode)) r.classList.add('ok-row');
+      }
+    });
+
+    if (pastCur === 6) {
+      bar.classList.add(pastPassMode ? 'ok' : 'danger');
+      title.innerHTML = pastPassMode ? st.titlePass : st.titleFail;
+      desc.innerHTML = pastPassMode ? st.descPass : st.descFail;
+    } else if (pastCur === 2) {
+      bar.classList.add(pastPassMode ? 'ok' : 'danger');
+      title.innerHTML = st.title;
+      desc.innerHTML = pastPassMode ? st.descPass : st.descFail;
+    } else {
+      if (pastCur === 1 || pastCur === 4) bar.classList.add('danger');
+      title.innerHTML = st.title;
+      desc.innerHTML = st.desc;
+    }
+  }
+
+  function pastSelectStep(i) { pastStopPlay(); pastCur = i; pastRender(); }
+  function pastNext() { if (pastCur < PAST_STEPS.length - 1) { pastCur++; pastRender(); } else pastStopPlay(); }
+  function pastPrev() { if (pastCur > 0) pastCur--; else pastCur = -1; pastRender(); }
+  function pastReset() { pastStopPlay(); pastCur = -1; pastRender(); }
+  function pastTogglePlay() {
+    if (pastPlaying) { pastStopPlay(); return; }
+    pastPlaying = true;
+    const btn = document.getElementById('pastPlayBtn');
+    btn.textContent = '⏸ Tạm dừng'; btn.classList.add('active');
+    if (pastCur >= PAST_STEPS.length - 1) pastCur = -1;
+    pastNext();
+    pastTimer = setInterval(() => {
+      if (pastCur < PAST_STEPS.length - 1) { pastCur++; pastRender(); } else pastStopPlay();
+    }, 2400);
+  }
+  function pastStopPlay() {
+    pastPlaying = false; clearInterval(pastTimer);
+    const btn = document.getElementById('pastPlayBtn');
+    if (btn) { btn.textContent = '▶ Chạy tự động'; btn.classList.remove('active'); }
+  }
+  function pastToggleMode() {
+    pastPassMode = !pastPassMode;
+    const btn = document.getElementById('pastModeBtn');
+    if (pastPassMode) {
+      btn.className = 'ufd-btn mode-pass';
+      btn.textContent = '✅ Đang chọn: Có gắn flash_init.ini (Hạ về 8 MHz ở Bước 3 ➔ Pass!)';
+    } else {
+      btn.className = 'ufd-btn mode-fail';
+      btn.textContent = '💥 Đang chọn: Không có flash_init.ini (.dbgconf giữ nguyên 72 MHz ➔ Lỗi!)';
+    }
+    pastRender();
+  }
+
+  /* =========================================================================
+     7. DIAGRAM ENGINE FOR TAB B (FUTURE: AFTER .DBGCONF REMOVAL & 80 TC)
+     ========================================================================= */
+  const FUT_SCENARIOS = [
+    {
+      name: 'Nhóm A (36 TC): Connect = Normal / Hw reset pulse + Reset = Autodetect / SYSRESETREQ',
+      bannerType: 'ok',
+      steps: [
+        {
+          pc: '<b>BƯỚC 1 (Mở phiên F8):</b> Đã tắt <code>.dbgconf</code>! <code>UV4.exe</code> giao toàn quyền điều khiển cho <code>ST-LINKIII-KEIL_SWO.dll</code>.',
+          st: 'Mở kết nối SWD theo đúng cấu hình người dùng chọn trong hộp thoại <i>Debug Settings</i>.',
+          mc: 'Chip đang chạy Firmware cũ ở <code>72 MHz</code> (<code>RCC_CFGR = 0x001D040A</code>, <code>FLASH_ACR = 0x32</code> — 2 WS).'
+        },
+        {
+          pc: '<b>BƯỚC 2 (Bước A — Chuẩn bị mặt bằng):</b> Thực thi <code>Connect = Normal</code> + <code>Reset = SYSRESETREQ / Autodetect</code>.',
+          st: 'Truyền gói tin SWD ghi bit <code>SYSRESETREQ</code> vào thanh ghi <code>SCB-&gt;AIRCR (0xE000ED0C)</code> và dừng lõi CPU (<code>Halt</code>).',
+          mc: '✅ <b>Reset mềm toàn chip thành công!</b> Cả lõi CPU lẫn ngoại vi <code>RCC</code> đều được làm sạch về <b>HSI 8 MHz (<code>RCC_CFGR = 0x00000000</code>)</b>!',
+          ok: true
+        },
+        {
+          pc: '<b>BƯỚC 3 (Bước B — Bơm <code>.FLM</code> vào SRAM):</b> <code>UV4.exe</code> nạp tệp <code>STM32F10x_128.FLM</code> vào <code>SRAM (0x20000000)</code> và gọi <code>FLM_Init()</code>.',
+          st: 'Chuyển con trỏ <code>PC</code> vào <code>FLM_Init()</code> trong SRAM.',
+          mc: 'Hàm <code>FLM_Init()</code> ghi cứng <code>FLASH-&gt;ACR = 0</code> (0 WS). <b>Vì Bước 2 đã đưa chip về 8 MHz nên <code>0 WS</code> hoàn toàn hợp lệ!</b>',
+          ram: true
+        },
+        {
+          pc: '<b>BƯỚC 4 (Bước B — Erase &amp; Program):</b> Chạy <code>EraseSector()</code> và <code>ProgramPage()</code> để ghi code mới xuống <code>0x08000000</code>.',
+          st: 'Bơm từng khối dữ liệu từ PC vào Buffer SRAM và chờ cờ <code>BSY</code>.',
+          mc: 'Ghi hoàn tất 100% vào vùng nhớ Flash <code>0x08000000</code>.',
+          ram: true
+        },
+        {
+          pc: '<b>BƯỚC 5 (Bước C — Verify):</b> Đọc lại vùng nhớ <code>0x08000000</code> để đối chiếu với tệp <code>.axf</code>.',
+          st: 'Đọc qua cổng AHB-AP ở tốc độ <code>8 MHz</code> (chu kỳ <code>125 ns &gt;&gt; 35 ns</code>).',
+          mc: '🎉 <b>VERIFY PASS 100%!</b> Không bị trượt 8-byte!',
+          ok: true
+        },
+        {
+          pc: '<b>BƯỚC 6 (Bước C — Reset &amp; Run):</b> Cuối phiên nạp, Keil gọi lại kiểu Reset đã chọn (<code>SYSRESETREQ</code>).',
+          st: 'Phát lệnh Reset mềm <code>SYSRESETREQ</code> qua dây SWD.',
+          mc: '🚀 <b>Chạy Ngay Lập Tức!</b> Chip khởi động lại sạch sẽ, vào <code>main()</code> mở <code>2 WS (0x32)</code> và chạy 72 MHz (Ứng với <code>TC_01..04, 09..12, 49..52, 57..60</code>)!',
+          ok: true
+        }
+      ]
+    },
+    {
+      name: 'Nhóm B (8 TC): Connect = with Pre-reset / under Reset + Reset = HW RESET (TC_21..24, TC_37..40)',
+      bannerType: 'ok',
+      steps: [
+        {
+          pc: '<b>BƯỚC 1 (Mở phiên F8):</b> Chọn <code>Connect = with Pre-reset</code> hoặc <code>under Reset</code> kết hợp với <code>Reset = HW RESET</code>.',
+          st: 'Chuẩn bị phát tín hiệu trên cả đường dây vật lý <code>NRST</code> lẫn đường dây dữ liệu <code>SWD</code>.',
+          mc: 'Chip đang chạy Firmware cũ ở <code>72 MHz</code>.'
+        },
+        {
+          pc: '<b>BƯỚC 2 (Bước A — Kéo NRST lúc Connect):</b> Thực hiện bắt tay <code>under Reset / Pre-reset</code>.',
+          st: '⚡ <b>Ở ĐẦU PHIÊN NẠP:</b> ST-Link thực sự kéo chân vật lý <code>NRST</code> xuống 0V (GND) trong lúc mở cổng SWD rồi Halt CPU!',
+          mc: '✅ <b>Nhờ xung NRST ở đầu phiên Connect:</b> Toàn bộ chip (bao gồm <code>RCC</code>) được Reset cứng về <b>HSI 8 MHz</b>!',
+          ok: true
+        },
+        {
+          pc: '<b>BƯỚC 3 (Bước B — Chạy <code>.FLM</code> trong SRAM):</b> Nạp <code>STM32F10x_128.FLM</code> vào <code>0x20000000</code> và chạy <code>FLM_Init()</code>.',
+          st: 'Thực thi <code>FLM_Init()</code>, <code>Erase</code> và <code>ProgramPage()</code>.',
+          mc: '<code>FLM_Init()</code> ép <code>FLASH_ACR = 0</code>. Vì chip đã về <b>8 MHz</b> từ Bước 2 nên ghi và đọc hoàn toàn chuẩn xác!',
+          ram: true
+        },
+        {
+          pc: '<b>BƯỚC 4 (Bước C — Verify):</b> Kiểm tra lại dữ liệu tại <code>0x08000000</code>.',
+          st: 'Đọc dữ liệu qua SWD ở xung nhịp 8 MHz.',
+          mc: '🎉 <b>VERIFY PASS 100%!</b> Toàn bộ dữ liệu khớp tuyệt đối.',
+          ok: true
+        },
+        {
+          pc: '<b>BƯỚC 5 (Bước C — Lệnh Reset cuối phiên):</b> Keil gọi kiểu <code>Reset = HW RESET</code> để đánh thức chip chạy code mới.',
+          st: '⚠️ <b>LỖI DRIVER ST-LINK V2 Ở CUỐI PHIÊN:</b> Ở cuối quá trình nạp, lệnh <code>HW RESET</code> không phát ra xung trên chân <code>NRST</code>!',
+          mc: '💤 Vì không nhận được xung Reset cuối kỳ, lõi Cortex-M3 <b>vẫn nằm im ở trạng thái dừng (Halted)</b>!',
+          warn: true
+        },
+        {
+          pc: '<b>BƯỚC 6 (Thao tác của Người dùng):</b> Code mới đã nằm chuẩn 100% trong Flash.',
+          st: 'Đợi tác động vật lý trên bo mạch.',
+          mc: '👇 <b>Nhấn nút RESET vật lý trên board:</b> Ngay khi bạn bấm nút Reset trên mạch, chip thức dậy và chạy 72 MHz (Giải thích hoàn hảo <code>TC_21..24</code> &amp; <code>TC_37..40</code>)!',
+          ok: true
+        }
+      ]
+    },
+    {
+      name: 'Nhóm C (20 TC): Connect = Normal / Hw reset pulse + Reset = HW RESET / VECTRESET (TC_05..08, 13..16, 53..56, 61..64, 77..80)',
+      bannerType: 'danger',
+      steps: [
+        {
+          pc: '<b>BƯỚC 1 (Mở phiên F8):</b> Chọn <code>Connect = Normal</code> (hoặc <code>Hw reset pulse</code>) đi kèm <code>Reset = VECTRESET</code> hoặc <code>HW RESET</code>.',
+          st: 'Kết nối vào cổng SWD mà không giữ chân <code>NRST</code> lúc bắt tay.',
+          mc: 'Chip đang chạy Firmware cũ ở <b>72 MHz</b> (<code>RCC_CFGR = 0x001D040A</code>).'
+        },
+        {
+          pc: '<b>BƯỚC 2 (Bước A — Thất bại trong việc hạ xung):</b> Thực thi <code>VECTRESET</code> hoặc <code>HW RESET</code>.',
+          st: '• Với <code>VECTRESET</code>: Chỉ reset lõi CPU, không chạm tới <code>RCC</code>.<br/>• Với <code>HW RESET</code> đơn lẻ: Không phát được xung <code>NRST</code> hiệu quả.',
+          mc: '🚨 <b>HẬU QUẢ BƯỚC A:</b> Lõi CPU đã dừng (Halted), nhưng ngoại vi <code>RCC</code> <b>VẪN BỊ KẸT Ở 72 MHz</b>!',
+          warn: true
+        },
+        {
+          pc: '<b>BƯỚC 3 (Bước B — Tệp <code>.FLM</code> nhảy vào):</b> <code>UV4.exe</code> bơm <code>STM32F10x_128.FLM</code> vào SRAM và gọi <code>FLM_Init()</code>.',
+          st: 'CPU thực thi mã máy <code>&quot;DL `&quot;</code> trong SRAM.',
+          mc: '🚨 <b>THỦ PHẠM:</b> <code>FLM_Init()</code> ghi đè <b><code>FLASH-&gt;ACR = 0</code> (0 Wait State)</b> ngay khi chip vẫn đang ở <b>72 MHz</b>!',
+          warn: true
+        },
+        {
+          pc: '<b>BƯỚC 4 (Bước B — Erase &amp; Program):</b> Chạy hàm xóa và ghi Flash.',
+          st: 'Đợi cờ <code>FLASH_SR.BSY</code> (~50 µs mỗi Half-Word).',
+          mc: 'Dữ liệu mới vẫn được ghi xuống <code>0x08000000</code> đúng 100%.',
+          ram: true
+        },
+        {
+          pc: '<b>BƯỚC 5 (Bước C — Đọc Verify ở 72 MHz + 0 WS):</b> <code>.dll</code> gửi lệnh đọc vùng nhớ <code>0x08000000H</code>.',
+          st: 'Truy xuất các cụm 64-bit qua Bus AHB mỗi <code>13.88 ns</code> (nhanh hơn mức <code>35 ns</code> của Flash).',
+          mc: '💥 <b>TRƯỢT 8-BYTE (ADDR - 8):</b> Tại mọi địa chỉ chia hết cho 8, chốt đọc trả về dữ liệu cũ của <code>Địa chỉ − 8</code>!',
+          warn: true
+        },
+        {
+          pc: '<b>BƯỚC 6 (Kết cục):</b> <code>UV4.exe</code> đối chiếu thấy sai lệch hàng loạt.',
+          st: 'Ngắt phiên nạp.',
+          mc: '❌ <b>FAIL:</b> In ra <code>Contents mismatch at: 08000000H... Too many errors to display!</code>',
+          warn: true
+        }
+      ]
+    },
+    {
+      name: 'Nhóm D (4 TC): Connect = without Stop + Reset after Connect = Unchecked (TC_65, 67, 73, 75)',
+      bannerType: 'danger',
+      steps: [
+        {
+          pc: '<b>BƯỚC 1 (Mở phiên F8):</b> Chọn <code>Connect = without Stop</code> và <b>bỏ tick <code>Reset after Connect (Unchecked)</code></b>.',
+          st: 'Mở giao tiếp SWD nhưng nhận lệnh <b>KHÔNG ĐƯỢC DỪNG CPU</b>!',
+          mc: 'Chip đang chạy vòng lặp <code>while(1)</code> nháy LED ở <b>72 MHz</b>.'
+        },
+        {
+          pc: '<b>BƯỚC 2 (Bước A — Bỏ qua hoàn toàn cả Halt lẫn Reset):</b> Do <code>without Stop</code> + <code>Unchecked</code>, không có lệnh dừng hay Reset nào được gửi đi!',
+          st: 'Không ghi <code>DHCSR</code> và cũng không phát <code>SYSRESETREQ</code> ở đầu phiên.',
+          mc: '🚨 <b>CPU VẪN ĐANG CHẠY TỰ DO Ở 72 MHz!</b> Con chip hoàn toàn không biết mình sắp bị nạp Flash!',
+          warn: true
+        },
+        {
+          pc: '<b>BƯỚC 3 &amp; 4 (Bước B — Xung đột trực diện khi nạp <code>.FLM</code>):</b> Keil cố bơm <code>.FLM</code> vào SRAM và gọi hàm nạp khi CPU chưa được chuẩn bị sạch.',
+          st: 'Xung đột trạng thái thực thi trên Bus hệ thống ở tốc độ 72 MHz.',
+          mc: '🚨 <code>FLASH_ACR</code> bị ép về <code>0</code> ngay giữa lúc hệ thống đang phóng ở 72 MHz!',
+          warn: true
+        },
+        {
+          pc: '<b>BƯỚC 5 &amp; 6 (Kết cục — FAIL NGAY LẬP TỨC):</b> Không tốn thời gian chờ đợi các bước Reset trung gian.',
+          st: 'Báo lỗi Verify ngay lập tức về PC.',
+          mc: '⚡❌ <b>FAIL NGAY LẬP TỨC (NHANH HƠN HẲN CÁC TRƯỜNG HỢP TRÊN):</b> Nổ <code>Content mismatch(log_1.txt)</code> tức thì (Giải thích trọn vẹn ghi chú tại <code>TC_65, 67, 73, 75</code>)!',
+          warn: true
+        }
+      ]
+    },
+    {
+      name: 'Nhóm E (4 TC): Connect = without Stop + Reset = HW RESET (TC_69, 70, 71, 72)',
+      bannerType: 'danger',
+      steps: [
+        {
+          pc: '<b>BƯỚC 1 (Mở phiên F8):</b> Chọn tổ hợp nguy hiểm nhất: <code>Connect = without Stop</code> + <code>Reset = HW RESET</code>.',
+          st: 'Kết nối SWD mà không dừng CPU.',
+          mc: 'Chip đang chạy tự do ở <b>72 MHz</b>.'
+        },
+        {
+          pc: '<b>BƯỚC 2 (Bước A — Kép 2 lần thất bại dừng chip):</b> (1) <code>without Stop</code> không dừng CPU; (2) <code>HW RESET</code> không phát được xung cứng trên ST-Link V2.',
+          st: 'Hoàn toàn bất lực trong việc giành quyền kiểm soát lõi Cortex-M3!',
+          mc: '🚨 <b>CPU VẪN CHẠY TỰ DO KHÔNG THỂ KIỂM SOÁT!</b>',
+          warn: true
+        },
+        {
+          pc: '<b>BƯỚC 3 (Bước B — Cố ép chạy Erase/Program của <code>.FLM</code>):</b> <code>UV4.exe</code> cố ép CPU nhảy vào hàm <code>EraseSector</code> / <code>ProgramPage</code> trong SRAM.',
+          st: 'Giao tiếp SWD bị đứt gãy hoặc treo cứng do CPU không phản hồi trạng thái Debug Halt.',
+          mc: '💥 Trong tích tắc giằng co, hàm Erase xóa các ô về <code>0xFFFFFFFF</code> và chỉ vừa kịp ghi nhá 1 Half-Word (<code>0x0080</code>) vào <code>0x08000000</code> tạo thành <b><code>0xFFFF0080</code></b>!',
+          warn: true
+        },
+        {
+          pc: '<b>BƯỚC 4 (Kết cục hỗn loạn tại <code>TC_69..72</code>):</b> Trình điều khiển tự hủy phiên làm việc.',
+          st: 'Ngắt kết nối khẩn cấp.',
+          mc: '💀 <b>BÁO LỖI KÉP:</b> <code>Could not stop Cortex-M device! Please check the Jtag Cable. Error: Flash Erase/Download failed - Target DLL has been cancelled</code> (Khi mở ST-Link Utility kiểm tra thấy <code>0x08000000 = FFFF0080</code>, các ô khác <code>= FFFFFFFF</code>)!',
+          warn: true
+        }
+      ]
+    }
+  ];
+
+  let futScenIdx = 0, futCur = -1, futPlaying = false, futTimer = null;
+
+  function futSetScenario(sIdx) {
+    futStopPlay();
+    futScenIdx = sIdx;
+    futCur = -1;
+    const btns = document.querySelectorAll('#futScenarioBtns .ufd-phase-btn');
+    btns.forEach((b, i) => b.classList.toggle('active', i === sIdx));
+    futBuildRows();
+    futRender();
+    futTogglePlay();
+  }
+
+  function futBuildRows() {
+    const container = document.getElementById('futRowsContainer');
+    const scen = FUT_SCENARIOS[futScenIdx];
+    container.innerHTML = scen.steps.map((st, idx) => `
+      <div class="ufd-row passed" onclick="futSelectStep(${idx})">
+        <div class="ufd-cell pc-cell"><span class="ufd-step-tag">TRẠM ${idx + 1} (PC)</span><div>${st.pc}</div></div>
+        <div class="ufd-cell st-cell"><span class="ufd-step-tag">ST-LINK V2</span><div>${st.st}</div></div>
+        <div class="ufd-cell ${st.ram ? 'ram-cell' : 'mc-cell'}"><span class="ufd-step-tag">STM32 &amp; .FLM</span><div>${st.mc}</div></div>
+      </div>
+    `).join('');
+  }
+
+  function futRender() {
+    const scen = FUT_SCENARIOS[futScenIdx];
+    const rows = document.querySelectorAll('#futRowsContainer .ufd-row');
+    const bar = document.getElementById('futStatusBar');
+    const title = document.getElementById('futStatusTitle');
+    const desc = document.getElementById('futStatusDesc');
+
+    bar.classList.remove('danger', 'ok');
+    if (futCur === -1) {
+      bar.classList.add(scen.bannerType);
+      rows.forEach(r => { r.className = 'ufd-row passed'; });
+      title.innerHTML = '📌 Đang chọn: ' + scen.name;
+      desc.innerHTML = 'Nhấn <b>▶ Chạy tự động</b> hoặc click vào từng hàng bên dưới để theo dõi từng bước.';
+      return;
+    }
+
+    const st = scen.steps[futCur];
+    rows.forEach((r, idx) => {
+      r.className = 'ufd-row';
+      if (idx < futCur) r.classList.add('passed');
+      else if (idx === futCur) {
+        r.classList.add('active');
+        if (st.warn) r.classList.add('warn-row');
+        else if (st.ok) r.classList.add('ok-row');
+      }
+    });
+
+    if (st.warn) bar.classList.add('danger');
+    else if (st.ok) bar.classList.add('ok');
+    title.innerHTML = `${scen.name} — Trạm ${futCur + 1}/${scen.steps.length}`;
+    desc.innerHTML = st.mc;
+  }
+
+  function futSelectStep(i) { futStopPlay(); futCur = i; futRender(); }
+  function futNext() {
+    const scen = FUT_SCENARIOS[futScenIdx];
+    if (futCur < scen.steps.length - 1) { futCur++; futRender(); } else futStopPlay();
+  }
+  function futPrev() { if (futCur > 0) futCur--; else futCur = -1; futRender(); }
+  function futReset() { futStopPlay(); futCur = -1; futRender(); }
+  function futTogglePlay() {
+    if (futPlaying) { futStopPlay(); return; }
+    const scen = FUT_SCENARIOS[futScenIdx];
+    futPlaying = true;
+    const btn = document.getElementById('futPlayBtn');
+    btn.textContent = '⏸ Tạm dừng'; btn.classList.add('active');
+    if (futCur >= scen.steps.length - 1) futCur = -1;
+    futNext();
+    futTimer = setInterval(() => {
+      if (futCur < scen.steps.length - 1) { futCur++; futRender(); } else futStopPlay();
+    }, 2500);
+  }
+  function futStopPlay() {
+    futPlaying = false; clearInterval(futTimer);
+    const btn = document.getElementById('futPlayBtn');
+    if (btn) { btn.textContent = '▶ Chạy tự động'; btn.classList.remove('active'); }
+  }
+
+  /* =========================================================================
+     8. GENERATOR & FILTER FOR ALL 80 TEST CASES (TC_01 -> TC_80)
+     ========================================================================= */
+  const CONNECTS = ['Normal', 'with Pre-reset', 'under Reset', 'Hw reset pulse', 'without Stop'];
+  const RESETS   = ['Autodetect', 'HW RESET', 'SYSRESETREQ', 'VECTRESET'];
+  const COMBOS   = [
+    { rac: 'Unchecked', sar: 'Unchecked' },
+    { rac: 'Checked',   sar: 'Unchecked' },
+    { rac: 'Unchecked', sar: 'Checked'   },
+    { rac: 'Checked',   sar: 'Checked'   }
+  ];
+
+  const ALL_80_TC = [];
+  let tcNum = 1;
+  CONNECTS.forEach(conn => {
+    RESETS.forEach(rst => {
+      COMBOS.forEach(cb => {
+        const id = 'TC_' + String(tcNum).padStart(2, '0');
+        let res = 'Pass';
+        let note = 'Ngay lập tức';
+
+        if (conn === 'Normal' || conn === 'Hw reset pulse') {
+          if (rst === 'HW RESET' || rst === 'VECTRESET') {
+            res = 'Fail';
+            note = 'Content mismatch(log_1.txt)';
+          }
+        } else if (conn === 'with Pre-reset' || conn === 'under Reset') {
+          if (rst === 'HW RESET') {
+            res = 'Pass';
+            note = 'Nhấn nút reset vật lí';
+          }
+        } else if (conn === 'without Stop') {
+          if (rst === 'Autodetect') {
+            if (cb.rac === 'Unchecked' && cb.sar === 'Unchecked') {
+              res = 'Fail';
+              note = 'Content mismatch(log_1.txt), FAIL NGAY LẬP TỨC, RẤT NHANH HƠN CÁC TRƯỜNG HỢP TRÊN';
+            } else if (cb.rac === 'Unchecked' && cb.sar === 'Checked') {
+              res = 'Fail';
+              note = 'Content mismatch(log_1.txt)';
+            } else {
+              res = 'Pass';
+              note = 'Ngay lập tức';
+            }
+          } else if (rst === 'HW RESET') {
+            res = 'Fail';
+            note = 'Could not stop Cortex-M device! Please check the Jtag Cable. Error: Flash Download failed - Target DLL has been cancelled | Erase trong KeilC thì bị lỗi này: Error: Flash Erase failed - Target DLL has been cancelled | Vào STLink-Utility thì chỉ còn mỗi ô 0x08000000 = FFFF0080, các ô khác thì bị xóa hết = FFFFFFFF | Cái đoạn này rất hên xui: Lúc thì nạp được(bấm reset vật lý), Lúc thì bị FailContent mismatch(log_1.txt), Lúc thì cả flash và erase bị "Target DLL .." -> Có thể là do chưa tắt đi bật lại KeilC nên nó bị loạn';
+          } else if (rst === 'SYSRESETREQ') {
+            if (cb.rac === 'Unchecked') {
+              res = 'Fail';
+              note = 'Content mismatch(log_1.txt), FAIL NGAY LẬP TỨC, RẤT NHANH HƠN CÁC TRƯỜNG HỢP TRÊN';
+            } else {
+              res = 'Pass';
+              note = 'Ngay lập tức';
+            }
+          } else if (rst === 'VECTRESET') {
+            res = 'Fail';
+            note = 'Content mismatch(log_1.txt)';
+          }
+        }
+
+        ALL_80_TC.push({ id, conn, rst, rac: cb.rac, sar: cb.sar, res, note });
+        tcNum++;
+      });
+    });
+  });
+
+  function render80TCTable(filterKey) {
+    const tbody = document.getElementById('tc80TableBody');
+    const filtered = ALL_80_TC.filter(tc => {
+      if (filterKey === 'all') return true;
+      if (filterKey === 'Pass' || filterKey === 'Fail') return tc.res === filterKey;
+      return tc.conn === filterKey;
+    });
+
+    tbody.innerHTML = filtered.map(tc => {
+      const badgeClass = tc.res === 'Pass' ? 'b-measured' : 'b-fail';
+      const icon = tc.res === 'Pass' ? '✅ Pass' : '❌ Fail';
+      return `
+        <tr>
+          <td><b><code>${tc.id}</code></b></td>
+          <td><code>${tc.conn}</code></td>
+          <td><b>${tc.rst}</b></td>
+          <td>${tc.rac}</td>
+          <td>${tc.sar}</td>
+          <td><span class="badge ${badgeClass}">${icon}</span></td>
+          <td>${tc.note}</td>
+        </tr>
+      `;
+    }).join('');
+  }
+
+  function filter80TC(key, btnEl) {
+    document.querySelectorAll('.tc-filter-btn').forEach(b => b.classList.remove('active'));
+    btnEl.classList.add('active');
+    render80TCTable(key);
+  }
+
+  // Initialize everything on load
+  pastRender();
+  futBuildRows();
+  futRender();
+  render80TCTable('all');
+</script>
+</body>
+</html>
